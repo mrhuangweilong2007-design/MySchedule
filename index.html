@@ -228,6 +228,48 @@
   .bell-row .bt2 { font-size: 13px; font-weight: 600; color: var(--label-2); font-variant-numeric: tabular-nums; }
   .bell-grp-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--label-3); padding: 12px 0 4px; }
 
+  /* ---------- Campus map ---------- */
+  .mapview { display: none; padding: 10px 0 18px; }
+  .map-toolbar { display: flex; gap: 7px; padding: 0 18px 10px; flex-wrap: wrap; align-items: center; }
+  .map-btn {
+    appearance: none; border: 0; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700;
+    padding: 9px 14px; border-radius: 18px; background: var(--fill); color: var(--label); transition: transform 0.15s;
+  }
+  .map-btn.on { background: var(--c-cs); color: #fff; }
+  .map-btn.cal-armed { background: var(--c-eng); color: #fff; }
+  .map-btn:active { transform: scale(0.95); }
+  .map-status { font-size: 11px; color: var(--label-2); font-weight: 600; flex-basis: 100%; padding: 2px 2px 0; line-height: 1.4; }
+  .map-frame {
+    position: relative; margin: 0 18px; border-radius: 16px; overflow: hidden;
+    background: #0b1620; box-shadow: var(--shadow-card); border: 0.5px solid var(--hairline);
+    height: 62vh; min-height: 340px; touch-action: none;
+  }
+  .map-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .map-stage img { display: block; width: 100%; height: auto; -webkit-user-drag: none; user-select: none; pointer-events: none; }
+  .pin {
+    position: absolute; transform: translate(-50%, -100%); cursor: pointer; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; pointer-events: auto;
+  }
+  .pin .pin-dot {
+    width: 14px; height: 14px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    background: var(--c-cs); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .pin .pin-label {
+    margin-top: 2px; font-size: 8px; font-weight: 800; color: #fff; background: rgba(0,0,0,0.65);
+    padding: 2px 5px; border-radius: 5px; white-space: nowrap; letter-spacing: 0.01em;
+  }
+  .pin.hl .pin-dot { background: var(--c-eng); width: 18px; height: 18px; animation: bounce 0.8s infinite alternate; }
+  .pin.hl .pin-label { background: var(--c-eng); font-size: 9.5px; }
+  @keyframes bounce { from { transform: rotate(-45deg) translate(0,0);} to { transform: rotate(-45deg) translate(-3px,-3px);} }
+  .me-dot {
+    position: absolute; z-index: 8; width: 16px; height: 16px; border-radius: 50%;
+    background: #0a84ff; border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(10,132,255,0.25), 0 1px 6px rgba(0,0,0,0.5);
+    transform: translate(-50%, -50%); display: none;
+  }
+  .me-dot::after { content:""; position:absolute; inset:-14px; border-radius:50%; border: 2px solid rgba(10,132,255,0.5); animation: ping 2s infinite; }
+  @keyframes ping { 0%{transform:scale(0.5);opacity:1} 100%{transform:scale(1.4);opacity:0} }
+  .map-legend { padding: 10px 18px 0; font-size: 11px; color: var(--label-3); line-height: 1.5; }
+
   /* ---------- Detail sheet ---------- */
   .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .scrim.show { opacity: 1; pointer-events: auto; }
@@ -272,6 +314,7 @@
           <span class="seg-thumb" id="segThumb"></span>
           <button data-view="day" class="active">Day</button>
           <button data-view="week">Week</button>
+          <button data-view="map">Map</button>
         </div>
       </div>
       <div class="week-scroll" id="weekScroll"></div>
@@ -299,6 +342,24 @@
 
   <!-- Week view -->
   <div class="grid-scroll" id="weekView"><div class="grid" id="grid"></div></div>
+
+  <!-- Campus map -->
+  <div class="mapview" id="mapView">
+    <div class="map-toolbar">
+      <button class="map-btn" id="locBtn">📍 Locate me</button>
+      <button class="map-btn" id="calBtn">🎯 Calibrate</button>
+      <button class="map-btn" id="zoomIn">＋</button>
+      <button class="map-btn" id="zoomOut">－</button>
+      <div class="map-status" id="mapStatus">Tap a pin for details. Buildings are linked from each class's “Show on map”.</div>
+    </div>
+    <div class="map-frame" id="mapFrame">
+      <div class="map-stage" id="mapStage">
+        <img src="./campus-map.jpg" alt="Campus map" id="mapImg" draggable="false" />
+        <div class="me-dot" id="meDot"></div>
+      </div>
+    </div>
+    <div class="map-legend">Drag to pan · pinch or ＋/－ to zoom · Blue dot = your GPS position (approximate; 5–15 m outdoors).<br>First time: stand at a known spot (e.g. a gate), tap 🎯 Calibrate, then tap that exact spot on the map — do it at 2 different spots for best accuracy.</div>
+  </div>
 
   <!-- Reminders -->
   <div class="panel" id="remPanel">
@@ -676,6 +737,7 @@ function openSheet(c){
       <div class="drow"><div><div class="dk">Teaching weeks</div><div class="dv">${weekLabel(c)}</div></div></div>
       <div class="drow"><div><div class="dk">Location</div><div class="dv">${c.room}<br><small>${c.place}</small></div></div></div>
     </div>
+    ${buildingFor(c) ? `<button class="close-btn" style="background:var(--c-cs-bg);margin-bottom:0" onclick="showOnMap('${buildingFor(c)}')">🗺️ Show on map</button>` : ''}
     <button class="close-btn" onclick="closeSheet()">Done</button>`;
   scrim.classList.add('show'); sheet.classList.add('show');
 }
@@ -782,12 +844,242 @@ document.querySelectorAll('.panel-head').forEach(h=>{
   ).join('');
 })();
 
+// ================= Campus map =================
+// Pin positions as % of the map image (read from the gridded original).
+const BUILDINGS = {
+  north_gate:{x:34,y:11,n:"North Gate",cn:"北门"},
+  st1:{x:32,y:18,n:"S&T Building 1",cn:"科技楼1栋 · tallest tower"},
+  st2:{x:33,y:26,n:"S&T Building 2",cn:"科技楼2栋 · NIIT Lab 408-1, Room 414"},
+  st3:{x:27,y:25,n:"S&T Building 3",cn:"科技楼3栋 · Room 513, office 505"},
+  st4:{x:29,y:29,n:"S&T Building 4",cn:"科技楼4栋 · Robotics Lab 713"},
+  north_stadium:{x:47,y:12,n:"North Stadium",cn:"北区操场 · PE football field"},
+  north_canteen:{x:56,y:34,n:"North Canteen",cn:"北食堂 · supermarket, packages, print"},
+  tb1:{x:35,y:42,n:"Teaching Building 1",cn:"1号教学楼 · Room 1416 (Python)"},
+  tb2:{x:41,y:51,n:"Teaching Building 2",cn:"2号教学楼 · rooms 2308/2310/2408/2409 (likely)"},
+  admin:{x:47,y:53,n:"Administrative Bldg",cn:"行政楼"},
+  qy1:{x:42,y:49,n:"QY1",cn:"QY1楼"}, qy2:{x:43,y:53,n:"QY2",cn:"QY2楼"}, qy3:{x:44,y:57,n:"QY3",cn:"QY3楼"},
+  tb6:{x:50,y:54,n:"Teaching Building 6",cn:"6号教学楼"},
+  tb7:{x:51,y:58,n:"Teaching Building 7",cn:"7号教学楼"},
+  tb8:{x:52,y:62,n:"Teaching Building 8",cn:"8号教学楼"},
+  library:{x:55,y:79,n:"Library",cn:"图书馆"},
+  south_canteen:{x:56,y:65,n:"South Canteen",cn:"南食堂 · Unicom shop"},
+  clinic:{x:58,y:68,n:"Clinic / ATM",cn:"医务室 · ATM"},
+  south_stadium:{x:49,y:71,n:"South Stadium",cn:"南区操场"},
+  south_gym:{x:52,y:79,n:"South Indoor Gym",cn:"南区体育馆"},
+  west_gate:{x:28,y:54,n:"West Gate",cn:"西门"},
+  east_gate:{x:63,y:74,n:"East Gate",cn:"东门"},
+  south_gate:{x:55,y:91,n:"South Gate",cn:"南门"},
+};
+// Map a class to a building pin.
+function buildingFor(c){
+  const p = (c.place||'') + ' ' + (c.room||'');
+  if (/Tech Bldg 2/.test(p)) return 'st2';
+  if (/Tech Bldg 3/.test(p)) return 'st3';
+  if (/Tech Bldg 4/.test(p)) return 'st4';
+  if (/Teaching Bldg 1/.test(p)) return 'tb1';
+  if (/Room 2[34]\d\d/.test(p)) return 'tb2';
+  if (/Football Field|North Campus Field/.test(p)) return 'north_stadium';
+  if (/Canteen/.test(p)) return 'south_canteen';
+  return null;
+}
+// Default GPS anchors (approximate — refined by on-site calibration).
+const DEFAULT_ANCHORS = [
+  { lat:31.9245, lng:118.8195, x:34, y:11 },  // north gate
+  { lat:31.9115, lng:118.8265, x:55, y:91 },  // south gate
+  { lat:31.9180, lng:118.8185, x:28, y:54 },  // west gate
+  { lat:31.9145, lng:118.8290, x:63, y:74 },  // east gate
+];
+// Affine fit (least squares): [lat,lng,1] -> x%, y%. User calibration pairs get heavy weight.
+function solveAffine(pairs){
+  const A=[[0,0,0],[0,0,0],[0,0,0]], bx=[0,0,0], by=[0,0,0];
+  pairs.forEach(p=>{
+    const w = p.w || 1, v = [p.lat, p.lng, 1];
+    for (let i=0;i<3;i++){ for (let j=0;j<3;j++) A[i][j]+=w*v[i]*v[j]; bx[i]+=w*v[i]*p.x; by[i]+=w*v[i]*p.y; }
+  });
+  function det3(m){ return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]); }
+  const d = det3(A); if (Math.abs(d) < 1e-12) return null;
+  function solve(b){
+    const r=[];
+    for (let k=0;k<3;k++){
+      const M = A.map(row=>row.slice());
+      for (let i=0;i<3;i++) M[i][k]=b[i];
+      r.push(det3(M)/d);
+    }
+    return r;
+  }
+  return { cx: solve(bx), cy: solve(by) };
+}
+function gpsToPct(lat,lng){
+  const cal = (settings.calPairs||[]).map(p=>({...p,w:60}));
+  const T = solveAffine(DEFAULT_ANCHORS.concat(cal));
+  if (!T) return null;
+  return { x: T.cx[0]*lat + T.cx[1]*lng + T.cx[2], y: T.cy[0]*lat + T.cy[1]*lng + T.cy[2] };
+}
+
+(function(){
+  const frame = document.getElementById('mapFrame');
+  const stage = document.getElementById('mapStage');
+  const img = document.getElementById('mapImg');
+  const meDot = document.getElementById('meDot');
+  const status = document.getElementById('mapStatus');
+  let scale = 1, tx = 0, ty = 0, imgW = 0, imgH = 0, inited = false;
+  let watchId = null, lastFix = null, calArmed = false, hlPin = null;
+
+  function apply(){ stage.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; }
+  function clampPan(){
+    const fw = frame.clientWidth, fh = frame.clientHeight;
+    const sw = imgW*scale, sh = imgH*scale;
+    tx = Math.min(Math.max(tx, fw - sw - 40), 40);
+    ty = Math.min(Math.max(ty, fh - sh - 40), 40);
+    if (sw < fw) tx = (fw-sw)/2;
+    if (sh < fh) ty = (fh-sh)/2;
+  }
+  function initSize(){
+    if (!img.naturalWidth) return;
+    imgW = frame.clientWidth * 1.6;  // start slightly zoomed
+    stage.style.width = imgW + 'px';
+    imgH = imgW * img.naturalHeight / img.naturalWidth;
+    scale = 1; tx = (frame.clientWidth - imgW)/2; ty = 0;
+    clampPan(); apply(); placePins(); inited = true;
+  }
+  function placePins(){
+    stage.querySelectorAll('.pin').forEach(e=>e.remove());
+    Object.entries(BUILDINGS).forEach(([id,b])=>{
+      const el = document.createElement('div');
+      el.className = 'pin'; el.dataset.id = id;
+      el.style.left = b.x + '%'; el.style.top = b.y + '%';
+      el.innerHTML = `<div class="pin-dot"></div><div class="pin-label">${b.n}</div>`;
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); pinInfo(id); });
+      stage.appendChild(el);
+    });
+  }
+  function pinInfo(id){
+    const b = BUILDINGS[id];
+    const classesHere = C.filter(c=>buildingFor(c)===id);
+    const list = classesHere.length
+      ? '<div style="margin-top:10px">' + [...new Set(classesHere.map(c=>c.n+' · '+c.room))].map(s=>`<div style="font-size:13px;padding:4px 0;color:var(--label-2)">• ${s}</div>`).join('') + '</div>'
+      : '';
+    const body = document.getElementById('sheetBody');
+    body.style.setProperty('--accent','var(--c-cs)'); body.style.setProperty('--accent-bg','var(--c-cs-bg)');
+    body.innerHTML = `<span class="badge">Building</span><h2>${b.n}</h2>
+      <div style="font-size:13.5px;color:var(--label-2);font-weight:500">${b.cn}</div>${list}
+      <button class="close-btn" onclick="closeSheet()">Done</button>`;
+    scrim.classList.add('show'); sheet.classList.add('show');
+  }
+  window.showOnMap = function(id){
+    closeSheet();
+    seg.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view==='map'));
+    state.view = 'map'; moveThumb(); refresh();
+    setTimeout(()=>{
+      if (!inited) initSize();
+      stage.querySelectorAll('.pin').forEach(p=>p.classList.toggle('hl', p.dataset.id===id));
+      hlPin = id;
+      const b = BUILDINGS[id];
+      // center the pin
+      scale = Math.max(scale, 1.6);
+      tx = frame.clientWidth/2 - (b.x/100)*imgW*scale;
+      ty = frame.clientHeight/2 - (b.y/100)*imgH*scale;
+      clampPan(); apply();
+      status.textContent = `📍 ${b.n} — ${b.cn}`;
+    }, 60);
+  };
+
+  // Pan & pinch
+  const ptrs = new Map(); let lastDist = 0;
+  frame.addEventListener('pointerdown', e=>{ ptrs.set(e.pointerId, e); frame.setPointerCapture(e.pointerId); });
+  frame.addEventListener('pointermove', e=>{
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, e);
+    if (ptrs.size === 1){ tx += e.clientX - prev.clientX; ty += e.clientY - prev.clientY; clampPan(); apply(); }
+    else if (ptrs.size === 2){
+      const [a,b] = [...ptrs.values()];
+      const dist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+      if (lastDist){
+        const f = dist/lastDist;
+        const cx = (a.clientX+b.clientX)/2 - frame.getBoundingClientRect().left;
+        const cy = (a.clientY+b.clientY)/2 - frame.getBoundingClientRect().top;
+        const ns = Math.min(Math.max(scale*f, 0.6), 5);
+        tx = cx - (cx-tx)*(ns/scale); ty = cy - (cy-ty)*(ns/scale); scale = ns;
+        clampPan(); apply();
+      }
+      lastDist = dist;
+    }
+  });
+  const endPtr = e=>{ ptrs.delete(e.pointerId); if (ptrs.size<2) lastDist = 0; };
+  frame.addEventListener('pointerup', endPtr); frame.addEventListener('pointercancel', endPtr);
+  function zoomBy(f){
+    const cx = frame.clientWidth/2, cy = frame.clientHeight/2;
+    const ns = Math.min(Math.max(scale*f, 0.6), 5);
+    tx = cx - (cx-tx)*(ns/scale); ty = cy - (cy-ty)*(ns/scale); scale = ns;
+    clampPan(); apply();
+  }
+  document.getElementById('zoomIn').onclick = ()=>zoomBy(1.35);
+  document.getElementById('zoomOut').onclick = ()=>zoomBy(1/1.35);
+
+  // Calibration: tap map where you actually stand
+  frame.addEventListener('click', e=>{
+    if (!calArmed) return;
+    if (!lastFix){ status.textContent = '🎯 Waiting for GPS fix — turn on Locate first.'; return; }
+    const r = frame.getBoundingClientRect();
+    const px = ((e.clientX - r.left - tx) / scale) / imgW * 100;
+    const py = ((e.clientY - r.top - ty) / scale) / imgH * 100;
+    settings.calPairs = (settings.calPairs||[]).slice(-2);
+    settings.calPairs.push({ lat:lastFix.lat, lng:lastFix.lng, x:px, y:py });
+    saveSettings(settings);
+    calArmed = false; document.getElementById('calBtn').classList.remove('cal-armed');
+    status.textContent = `✅ Calibration point ${settings.calPairs.length} saved. Do this at a 2nd spot for best accuracy.`;
+    updateDot();
+  });
+  document.getElementById('calBtn').onclick = ()=>{
+    calArmed = !calArmed;
+    document.getElementById('calBtn').classList.toggle('cal-armed', calArmed);
+    status.textContent = calArmed
+      ? '🎯 Now stand at a recognizable spot, wait for the blue dot, then TAP that exact spot on the map.'
+      : 'Calibration cancelled.';
+  };
+
+  // Live location
+  function updateDot(){
+    if (!lastFix) return;
+    const p = gpsToPct(lastFix.lat, lastFix.lng);
+    if (!p) return;
+    if (p.x < -10 || p.x > 110 || p.y < -10 || p.y > 110){
+      meDot.style.display = 'none';
+      status.textContent = `📡 GPS fix OK (±${Math.round(lastFix.acc)} m) but you appear outside the map — calibrate on campus to fix alignment.`;
+      return;
+    }
+    meDot.style.display = 'block';
+    meDot.style.left = p.x + '%'; meDot.style.top = p.y + '%';
+    status.textContent = `📡 Position updated · accuracy ±${Math.round(lastFix.acc)} m` + ((settings.calPairs||[]).length ? '' : ' · uncalibrated (approximate)');
+  }
+  document.getElementById('locBtn').onclick = function(){
+    if (watchId !== null){
+      navigator.geolocation.clearWatch(watchId); watchId = null;
+      this.classList.remove('on'); meDot.style.display = 'none';
+      status.textContent = 'Location off.'; return;
+    }
+    if (!('geolocation' in navigator)){ status.textContent = '❌ This browser has no location support.'; return; }
+    status.textContent = '📡 Getting GPS fix…';
+    this.classList.add('on');
+    watchId = navigator.geolocation.watchPosition(
+      pos => { lastFix = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy||99 }; updateDot(); },
+      err => { status.textContent = '❌ Location failed: ' + (err.code===1 ? 'permission denied — allow location for this site.' : err.message); },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
+    );
+  };
+  img.addEventListener('load', ()=>{ if (state.view==='map') initSize(); });
+  window.initMapIfNeeded = ()=>{ if (!inited) initSize(); };
+})();
+
 // ================= Refresh =================
 function refresh(){
   renderSub(); renderPills(); renderSetup(); syncTodayBtn();
   document.getElementById('dayView').style.display = state.view==='day' ? 'block' : 'none';
   document.getElementById('weekView').style.display = state.view==='week' ? 'block' : 'none';
-  if (state.view==='day'){ renderDayTabs(); renderAgenda(); } else { renderGrid(); }
+  document.getElementById('mapView').style.display = state.view==='map' ? 'block' : 'none';
+  if (state.view==='day'){ renderDayTabs(); renderAgenda(); }
+  else if (state.view==='week'){ renderGrid(); }
+  else { window.initMapIfNeeded && window.initMapIfNeeded(); }
   renderHero();
 }
 refresh();
