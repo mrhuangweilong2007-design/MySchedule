@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>JIT Schedule · Fall 2026–2027</title>
+<meta name="description" content="Interactive class timetable for Jinling Institute of Technology — per-week filtering, reminders, and offline access." />
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.webmanifest" />
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+
+<!-- Icons -->
+<link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="./icons/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="icon" href="./icons/favicon-16.png" sizes="16x16" type="image/png" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+
+<!-- iOS standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="JIT Schedule" />
+<style>
+  :root {
+    --bg: #f2f2f7; --bg-elevated: #ffffff;
+    --grid-line: rgba(60,60,67,0.10);
+    --label: #1c1c1e; --label-2: rgba(60,60,67,0.62); --label-3: rgba(60,60,67,0.32);
+    --fill: rgba(120,120,128,0.10); --fill-2: rgba(120,120,128,0.16);
+    --hairline: rgba(60,60,67,0.14); --sheet: #ffffff;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    --shadow-card: 0 1px 1.5px rgba(0,0,0,0.05);
+    --blur-bg: rgba(242,242,247,0.72);
+    --morning: rgba(255,159,10,0.05); --afternoon: rgba(10,132,255,0.05); --evening: rgba(94,92,230,0.05);
+    --c-cs: #0a84ff; --c-cs-bg: rgba(10,132,255,0.12);
+    --c-math: #5e5ce6; --c-math-bg: rgba(94,92,230,0.12);
+    --c-lang: #ff2d55; --c-lang-bg: rgba(255,45,85,0.11);
+    --c-eng: #ff9f0a; --c-eng-bg: rgba(255,159,10,0.13);
+    --c-pe: #34c759; --c-pe-bg: rgba(52,199,89,0.13);
+    --c-culture: #00b8d4; --c-culture-bg: rgba(0,184,212,0.12);
+    --c-project: #bf5af2; --c-project-bg: rgba(191,90,242,0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000; --bg-elevated: #1c1c1e; --grid-line: rgba(84,84,88,0.34);
+      --label: #fff; --label-2: rgba(235,235,245,0.62); --label-3: rgba(235,235,245,0.30);
+      --fill: rgba(118,118,128,0.18); --fill-2: rgba(118,118,128,0.26);
+      --hairline: rgba(84,84,88,0.5); --sheet: #1c1c1e;
+      --shadow: 0 8px 30px rgba(0,0,0,0.5); --shadow-card: 0 1px 2px rgba(0,0,0,0.3);
+      --blur-bg: rgba(20,20,22,0.7);
+      --morning: rgba(255,159,10,0.07); --afternoon: rgba(10,132,255,0.07); --evening: rgba(94,92,230,0.08);
+      --c-cs-bg: rgba(10,132,255,0.20); --c-math-bg: rgba(94,92,230,0.22); --c-lang-bg: rgba(255,55,95,0.20);
+      --c-eng-bg: rgba(255,159,10,0.20); --c-pe-bg: rgba(48,209,88,0.20);
+      --c-culture-bg: rgba(0,200,230,0.20); --c-project-bg: rgba(191,90,242,0.22);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    background: var(--bg); color: var(--label); -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility; letter-spacing: -0.01em; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  header {
+    position: sticky; top: 0; z-index: 40; background: var(--blur-bg);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  .head-inner { max-width: 1120px; margin: 0 auto; padding: 14px 20px 10px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-cs); }
+  h1 { margin: 2px 0 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { margin-top: 3px; font-size: 13.5px; color: var(--label-2); }
+  .school { font-size: 12.5px; color: var(--label-3); font-weight: 500; margin-top: 1px; }
+  .segmented { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 2px; margin-top: 12px; position: relative; }
+  .segmented button {
+    appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 13px;
+    font-weight: 600; color: var(--label); padding: 6px 16px; border-radius: 7px; position: relative; z-index: 2; transition: color 0.2s;
+  }
+  .seg-thumb {
+    position: absolute; top: 2px; left: 2px; height: calc(100% - 4px); background: var(--bg-elevated);
+    border-radius: 7px; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.04);
+    transition: transform 0.32s cubic-bezier(0.32,0.72,0,1), width 0.32s cubic-bezier(0.32,0.72,0,1);
+  }
+  .weekbar { margin-top: 12px; }
+  .week-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .week-scroll::-webkit-scrollbar { display: none; }
+  .week-pill {
+    flex: 0 0 auto; scroll-snap-align: center; appearance: none; border: 0; cursor: pointer; font: inherit;
+    display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 52px; padding: 7px 10px;
+    border-radius: 13px; background: var(--fill); color: var(--label); transition: all 0.22s cubic-bezier(0.32,0.72,0,1);
+  }
+  .week-pill .wk { font-size: 10px; font-weight: 600; color: var(--label-2); letter-spacing: 0.02em; }
+  .week-pill .num { font-size: 17px; font-weight: 700; line-height: 1; }
+  .week-pill.active { background: var(--c-cs); color: #fff; transform: scale(1.04); }
+  .week-pill.active .wk { color: rgba(255,255,255,0.8); }
+  .week-pill.empty { opacity: 0.5; }
+  .stats { display: flex; gap: 10px; padding: 14px 20px 4px; overflow-x: auto; scrollbar-width: none; }
+  .stats::-webkit-scrollbar { display: none; }
+  .stat { flex: 1 0 auto; min-width: 92px; background: var(--bg-elevated); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow-card); border: 0.5px solid var(--hairline); }
+  .stat .v { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat .k { font-size: 11px; font-weight: 600; color: var(--label-2); margin-top: 1px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .stat .v small { font-size: 14px; font-weight: 600; color: var(--label-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 7px; padding: 14px 20px 4px; }
+  .chip {
+    appearance: none; border: 0; cursor: pointer; font: inherit; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: var(--label); padding: 6px 11px 6px 9px; border-radius: 20px; background: var(--fill); transition: all 0.2s;
+  }
+  .chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .chip.off { opacity: 0.38; }
+  .chip:active { transform: scale(0.94); }
+  .grid-scroll { overflow-x: auto; padding: 10px 20px 24px; -webkit-overflow-scrolling: touch; }
+  .grid { display: grid; grid-template-columns: 58px repeat(5, minmax(150px, 1fr)); grid-auto-rows: min-content; gap: 8px; min-width: 730px; position: relative; }
+  .col-head { position: sticky; top: 0; text-align: left; padding: 4px 2px 8px; }
+  .col-head .dow { font-size: 15px; font-weight: 700; }
+  .col-head .dnum { font-size: 11px; color: var(--label-2); font-weight: 500; }
+  .time-label { font-size: 12px; font-weight: 700; color: var(--label-2); text-align: right; padding-right: 8px; padding-top: 8px; line-height: 1.3; }
+  .time-label small { display: block; font-size: 10px; font-weight: 600; color: var(--label-3); margin-top: 1px; }
+  .time-label .grp { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--label-3); margin-bottom: 3px; }
+  .band-bg { grid-column: 2 / -1; border-radius: 12px; min-height: 78px; pointer-events: none; }
+  .band-bg.morning { background: var(--morning); }
+  .band-bg.afternoon { background: var(--afternoon); }
+  .band-bg.evening { background: var(--evening); min-height: 46px; }
+  .band-bg.evening::after { content: "No evening classes"; display: block; font-size: 11px; color: var(--label-3); padding: 14px 0 0 14px; font-weight: 500; }
+  .card {
+    position: relative; border-radius: 14px; padding: 10px 11px 10px 13px; background: var(--bg-elevated);
+    box-shadow: var(--shadow-card); cursor: pointer; overflow: hidden; min-height: 78px; display: flex; flex-direction: column;
+    transition: transform 0.18s cubic-bezier(0.32,0.72,0,1), box-shadow 0.18s; animation: pop 0.34s cubic-bezier(0.32,0.72,0,1) backwards;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.98);} to {opacity:1; transform:none;} }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+  .card:active { transform: scale(0.97); }
+  .card .cname { font-size: 13.5px; font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; padding-right: 4px; }
+  .card .cmeta { margin-top: auto; padding-top: 6px; font-size: 11px; color: var(--label-2); font-weight: 500; display: flex; align-items: center; gap: 4px; }
+  .card .croom { font-size: 11px; color: var(--label-2); font-weight: 500; margin-top: 3px; line-height: 1.25; display: flex; gap: 4px; align-items: flex-start; }
+  .card .ptag { font-size: 10px; font-weight: 700; color: var(--accent); margin-top: 3px; }
+  .card .ico { width: 11px; height: 11px; flex: 0 0 auto; margin-top: 1px; opacity: 0.7; }
+  .card.dim { opacity: 0.26; filter: saturate(0.4); }
+  .card .wtag { position: absolute; top: 8px; right: 9px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: var(--accent-bg); color: var(--accent); }
+  .empty-day { grid-column: 1 / -1; text-align: center; color: var(--label-3); font-size: 13px; padding: 40px 0; font-weight: 500; }
+  .agenda { padding: 6px 20px 30px; display: none; }
+  .day-tabs { display: flex; gap: 7px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: none; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab {
+    appearance: none; border: 0; cursor: pointer; font: inherit; flex: 1 0 auto; padding: 9px 4px; min-width: 60px;
+    border-radius: 13px; background: var(--fill); color: var(--label); display: flex; flex-direction: column; align-items: center; gap: 2px; transition: all 0.2s;
+  }
+  .day-tab .d1 { font-size: 12px; font-weight: 700; }
+  .day-tab .d2 { font-size: 10px; color: var(--label-2); font-weight: 500; }
+  .day-tab.active { background: var(--label); color: var(--bg); }
+  .day-tab.active .d2 { color: var(--bg); opacity: 0.7; }
+  .day-tab .cnt { font-size: 9px; font-weight: 700; margin-top: 1px; }
+  .agenda-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .arow { display: flex; gap: 12px; align-items: stretch; animation: pop 0.3s cubic-bezier(0.32,0.72,0,1) backwards; }
+  .atime { flex: 0 0 62px; text-align: right; padding-top: 13px; }
+  .atime .t1 { font-size: 15px; font-weight: 700; }
+  .atime .t2 { font-size: 11px; color: var(--label-2); font-weight: 500; }
+  .atime .t3 { font-size: 10px; color: var(--label-3); font-weight: 600; margin-top: 2px; }
+  .acard { flex: 1; border-radius: 16px; padding: 14px 16px; background: var(--bg-elevated); box-shadow: var(--shadow-card); position: relative; overflow: hidden; cursor: pointer; transition: transform 0.18s; }
+  .acard:active { transform: scale(0.985); }
+  .acard::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+  .acard .an { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+  .acard .am { font-size: 13px; color: var(--label-2); margin-top: 5px; font-weight: 500; display: flex; gap: 5px; }
+  .acard .cat { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-bg); padding: 3px 9px; border-radius: 7px; }
+  .agenda-empty { text-align: center; padding: 60px 20px; }
+  .agenda-empty .big { font-size: 40px; margin-bottom: 8px; }
+  .agenda-empty .msg { font-size: 15px; font-weight: 600; color: var(--label-2); }
+  .bell { margin: 8px 20px 4px; background: var(--bg-elevated); border-radius: 18px; box-shadow: var(--shadow-card); border: 0.5px solid var(--hairline); overflow: hidden; }
+  .bell-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; cursor: pointer; }
+  .bell-head .bt { font-size: 15px; font-weight: 700; }
+  .bell-head .bx { font-size: 13px; color: var(--label-2); font-weight: 600; transition: transform 0.3s; }
+  .bell.open .bx { transform: rotate(180deg); }
+  .bell-body { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.32,0.72,0,1); }
+  .bell.open .bell-body { max-height: 900px; }
+  .bell-grp { padding: 4px 18px 12px; }
+  .bell-grp .gl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent2); padding: 10px 0 6px; }
+  .bell-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 0.5px solid var(--hairline); }
+  .bell-row .bp { font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 9px; }
+  .bell-row .bn { width: 22px; height: 22px; border-radius: 7px; background: var(--fill); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--label-2); }
+  .bell-row .bt2 { font-size: 13px; font-weight: 600; color: var(--label-2); font-variant-numeric: tabular-nums; }
+  #rem.open .bell-body { max-height: 2200px; }
+  .rem-body { padding: 4px 18px 16px; }
+  .rem-note { font-size: 13px; color: var(--label-2); line-height: 1.5; margin: 4px 0 14px; }
+  .rem-note b { color: var(--label); }
+  .rem-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 0.5px solid var(--hairline); }
+  .rem-field label { font-size: 13.5px; font-weight: 600; }
+  .rem-field input, .rem-field select {
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--label); background: var(--fill);
+    border: 0; border-radius: 9px; padding: 8px 12px; -webkit-appearance: none; appearance: none; text-align: right;
+  }
+  .rem-field input[type=date] { min-width: 150px; text-align: left; }
+  .rem-step { display: flex; gap: 12px; padding: 16px 0 4px; border-top: 0.5px solid var(--hairline); margin-top: 8px; }
+  .rem-step-n { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .rem-step-t { font-size: 14.5px; font-weight: 700; }
+  .rem-step-d { font-size: 12.5px; color: var(--label-2); line-height: 1.5; margin-top: 3px; }
+  .rem-btns { display: flex; gap: 8px; margin-top: 11px; flex-wrap: wrap; }
+  .rem-btn { appearance: none; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 650; padding: 10px 16px; border-radius: 11px; background: var(--fill); color: var(--label); transition: transform 0.15s; }
+  .rem-btn.primary { background: var(--c-cs); color: #fff; }
+  .rem-btn:active { transform: scale(0.96); }
+  .rem-hint { font-size: 11.5px; color: var(--label-3); margin-top: 8px; line-height: 1.45; }
+  .rem-alarms { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .rem-aday .adname { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--label-3); margin-bottom: 6px; }
+  .rem-arow { display: flex; align-items: center; gap: 11px; padding: 8px 11px; background: var(--fill); border-radius: 10px; margin-bottom: 5px; }
+  .rem-arow .atime2 { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 50px; color: var(--c-pe); }
+  .rem-arow .ainfo { font-size: 12px; color: var(--label-2); font-weight: 500; line-height: 1.35; }
+  .rem-arow .ainfo b { color: var(--label); font-weight: 650; }
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.35s; backdrop-filter: blur(2px); }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: var(--sheet); border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow); padding: 10px 22px calc(30px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;
+    transform: translateY(102%); transition: transform 0.42s cubic-bezier(0.32,0.72,0,1);
+  }
+  .sheet.show { transform: translateY(0); }
+  .grabber { width: 38px; height: 5px; border-radius: 3px; background: var(--fill-2); margin: 6px auto 16px; }
+  .sheet .badge { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-bg); padding: 5px 12px; border-radius: 9px; }
+  .sheet h2 { margin: 12px 0 2px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .sheet .rows { margin-top: 18px; border-radius: 14px; overflow: hidden; background: var(--fill); }
+  .drow { display: flex; align-items: flex-start; gap: 13px; padding: 13px 15px; border-bottom: 0.5px solid var(--hairline); }
+  .drow:last-child { border-bottom: 0; }
+  .drow .di { width: 26px; height: 26px; border-radius: 8px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .drow .dk { font-size: 11px; font-weight: 600; color: var(--label-2); text-transform: uppercase; letter-spacing: 0.03em; }
+  .drow .dv { font-size: 15px; font-weight: 550; margin-top: 1px; line-height: 1.3; }
+  .close-btn { appearance: none; border: 0; cursor: pointer; font: inherit; width: 100%; margin-top: 18px; padding: 14px; border-radius: 14px; background: var(--fill); color: var(--c-cs); font-size: 16px; font-weight: 650; }
+  .close-btn:active { background: var(--fill-2); }
+  .footnote { text-align: center; font-size: 12px; color: var(--label-3); padding: 14px 20px 30px; line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: 0.01ms !important; } }
+  @media (max-width: 480px) {
+    h1 { font-size: 22px; }
+    .head-inner { padding: 12px 16px 8px; }
+    .stats, .legend, .grid-scroll, .agenda, .bell { padding-left: 16px; padding-right: 16px; }
+    .bell { margin-left: 16px; margin-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="head-inner">
+      <div class="eyebrow">Academic Year 2026 – 2027 · Term 1</div>
+      <h1>Fall Semester</h1>
+      <div class="school">Jinling Institute of Technology · 金陵科技学院</div>
+      <div class="sub" id="subline">18 teaching weeks · 8 courses · 11 daily periods</div>
+      <div class="segmented" id="seg">
+        <span class="seg-thumb" id="segThumb"></span>
+        <button data-view="week" class="active">Week</button>
+        <button data-view="day">Day</button>
+      </div>
+    </div>
+    <div class="weekbar">
+      <div class="head-inner" style="padding-top:2px;padding-bottom:0;">
+        <div class="week-scroll" id="weekScroll"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="grid-scroll" id="weekView"><div class="grid" id="grid"></div></div>
+
+  <div class="agenda" id="dayView">
+    <div class="day-tabs" id="dayTabs"></div>
+    <div class="agenda-list" id="agendaList"></div>
+  </div>
+
+  <div class="bell open" id="rem">
+    <div class="bell-head" id="remHead">
+      <span class="bt">🔔 Reminders &amp; wake-up alarms</span>
+      <span class="bx">▾</span>
+    </div>
+    <div class="bell-body">
+      <div class="rem-body">
+        <p class="rem-note">This page can't ring on its own. Set reminders in <b>your phone</b> instead — your Calendar and Clock apps can alert you even when it's locked or you're asleep.</p>
+
+        <div class="rem-field">
+          <label>Week 1 starts (first Monday)</label>
+          <input type="date" id="remDate" value="2026-09-07">
+        </div>
+        <div class="rem-field">
+          <label>Remind me before class</label>
+          <select id="remLead">
+            <option value="10">10 minutes before</option>
+            <option value="15">15 minutes before</option>
+            <option value="20">20 minutes before</option>
+            <option value="30" selected>30 minutes before</option>
+            <option value="45">45 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="90">1.5 hours before</option>
+            <option value="120">2 hours before</option>
+          </select>
+        </div>
+
+        <div class="rem-step">
+          <div class="rem-step-n" style="--accent:var(--c-cs)">1</div>
+          <div style="min-width:0">
+            <div class="rem-step-t">Add every class to your Calendar</div>
+            <div class="rem-step-d">Downloads a file with all sessions + alerts. It's smart about week-specific classes — you'll only be alerted on weeks you actually have that class.</div>
+            <div class="rem-btns">
+              <button class="rem-btn primary" id="dlIcs">Download calendar file (.ics)</button>
+              <button class="rem-btn" id="copyIcs">Copy instead</button>
+            </div>
+            <div class="rem-hint" id="icsHint">On your phone: open the downloaded file → it offers to add everything to your calendar in one tap.</div>
+          </div>
+        </div>
+
+        <div class="rem-step">
+          <div class="rem-step-n" style="--accent:var(--c-pe)">2</div>
+          <div style="min-width:0">
+            <div class="rem-step-t">Set loud Clock alarms — the real wake-up</div>
+            <div class="rem-step-d">Calendar alerts are gentle and easy to sleep through. For anything you might miss, set these as actual alarms in your Clock app (they override silent mode). Times below already subtract your reminder lead.</div>
+            <div class="rem-alarms" id="remAlarms"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bell" id="bell">
+    <div class="bell-head" id="bellHead">
+      <span class="bt">Bell schedule · class times</span>
+      <span class="bx">▾</span>
+    </div>
+    <div class="bell-body" id="bellBody"></div>
+  </div>
+
+  <div class="footnote">
+    Tap any class for room, weeks &amp; exact times · “Single week” = meets only that odd-numbered week.<br>
+    Each period is 45 minutes · Translated &amp; verified from 移动教务 · No classes on weekends.
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="grabber"></div><div id="sheetBody"></div></div>
+
+<script>
+const CATS = {
+  cs:      { name: "Computer Science", accent: "var(--c-cs)",      bg: "var(--c-cs-bg)" },
+  math:    { name: "Mathematics",      accent: "var(--c-math)",    bg: "var(--c-math-bg)" },
+  lang:    { name: "Language",         accent: "var(--c-lang)",    bg: "var(--c-lang-bg)" },
+  eng:     { name: "Engineering",      accent: "var(--c-eng)",     bg: "var(--c-eng-bg)" },
+  pe:      { name: "Physical Ed.",     accent: "var(--c-pe)",      bg: "var(--c-pe-bg)" },
+  culture: { name: "Culture",          accent: "var(--c-culture)", bg: "var(--c-culture-bg)" },
+  project: { name: "Design Project",   accent: "var(--c-project)", bg: "var(--c-project-bg)" },
+};
+// Official bell schedule (45-min periods)
+const PT = {
+  1:{s:"08:30",e:"09:15",g:"Morning"}, 2:{s:"09:20",e:"10:05",g:"Morning"},
+  3:{s:"10:25",e:"11:10",g:"Morning"}, 4:{s:"11:15",e:"12:00",g:"Morning"},
+  5:{s:"13:50",e:"14:35",g:"Afternoon"}, 6:{s:"14:40",e:"15:25",g:"Afternoon"},
+  7:{s:"15:45",e:"16:30",g:"Afternoon"}, 8:{s:"16:35",e:"17:20",g:"Afternoon"},
+  9:{s:"18:30",e:"19:15",g:"Evening"}, 10:{s:"19:20",e:"20:05",g:"Evening"}, 11:{s:"20:10",e:"20:55",g:"Evening"},
+};
+// Period-pair display bands
+const BANDS = [
+  { p:"1–2", ps:1, grp:"Morning",   cls:"morning" },
+  { p:"3–4", ps:3, grp:"Morning",   cls:"morning" },
+  { p:"5–6", ps:5, grp:"Afternoon", cls:"afternoon" },
+  { p:"7–8", ps:7, grp:"Afternoon", cls:"afternoon" },
+  { p:"9–10",ps:9, grp:"Evening",   cls:"evening" },
+  { p:"11",  ps:11,grp:"Evening",   cls:"evening" },
+];
+const bandOf = p => Math.floor((p-1)/2);
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+const DAYS_SHORT = ["Mon","Tue","Wed","Thu","Fri"];
+
+// sp = start period, ep = end period ; w = inclusive week ranges
+const C = [
+  // Monday
+  { n:"Comprehensive Chinese 3", cat:"lang", day:0, sp:1, ep:2, w:[[1,16]], room:"Room 2310", place:"Multimedia Classroom", odd:false },
+  { n:"Data Structures & Algorithms", cat:"cs", day:0, sp:3, ep:4, w:[[2,13]], room:"Room 2409", place:"Multimedia Classroom", odd:false },
+  { n:"Python Programming", cat:"cs", day:0, sp:5, ep:6, w:[[1,16]], room:"Room 1416", place:"Computer Fundamentals Lab 13 · Teaching Bldg 1", odd:false },
+  { n:"Python Programming", cat:"cs", day:0, sp:7, ep:8, w:[[9,16]], room:"Room 1416", place:"Computer Fundamentals Lab 13 · Teaching Bldg 1 (extra sessions)", odd:false },
+  { n:"OOP Course Design", cat:"project", day:0, sp:5, ep:8, w:[[17,17]], room:"Room 414", place:"Programming & Software Tech Lab (Sub-lab 2) · Tech Bldg 2", odd:true },
+  // Tuesday
+  { n:"Comprehensive Chinese 3", cat:"lang", day:1, sp:1, ep:2, w:[[1,16]], room:"Room 2310", place:"Multimedia Classroom", odd:false },
+  { n:"Data Structures & Algorithms", cat:"cs", day:1, sp:3, ep:4, w:[[2,13]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:false },
+  { n:"OOP Course Design", cat:"project", day:1, sp:1, ep:4, w:[[17,17]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:true },
+  { n:"Chinese Traditional Culture 3", cat:"culture", day:1, sp:5, ep:8, w:[[2,6]], room:"Room 513", place:"Intl. Program Smart Classroom · Tech Bldg 3", odd:false },
+  { n:"Chinese Traditional Culture 3", cat:"culture", day:1, sp:5, ep:8, w:[[7,7]], room:"North Campus Field", place:"North Campus Football Field", odd:true },
+  { n:"Linear Algebra C", cat:"math", day:1, sp:5, ep:6, w:[[17,18]], room:"Room 2308", place:"Multimedia Classroom", odd:false },
+  // Wednesday
+  { n:"Data Structures & Algorithms", cat:"cs", day:2, sp:1, ep:2, w:[[7,14]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:false },
+  { n:"Linear Algebra C", cat:"math", day:2, sp:3, ep:4, w:[[8,18]], room:"Room 2308", place:"Multimedia Classroom", odd:false },
+  { n:"OOP Course Design", cat:"project", day:2, sp:5, ep:6, w:[[17,17]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:true },
+  // Thursday
+  { n:"Comprehensive Chinese 3", cat:"lang", day:3, sp:1, ep:2, w:[[1,16]], room:"Room 2408", place:"Multimedia Classroom", odd:false },
+  { n:"Robotics Technology", cat:"eng", day:3, sp:3, ep:6, w:[[1,6],[7,8],[10,13]], room:"Room 713", place:"Intelligent Control & Industrial Automation Lab · Tech Bldg 4", odd:false, note:"Long practical block spanning the midday break (12:00–13:50)." },
+  { n:"OOP Course Design", cat:"project", day:3, sp:5, ep:8, w:[[17,17]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:true },
+  { n:"Physical Education 3", cat:"pe", day:3, sp:7, ep:8, w:[[1,12]], room:"Canteen · 3rd Floor", place:"Sports venue", odd:false },
+  // Friday
+  { n:"OOP Course Design", cat:"project", day:4, sp:1, ep:2, w:[[17,17]], room:"Room 408-1", place:"NIIT Project Lab · Tech Bldg 2", odd:true },
+  { n:"Linear Algebra C", cat:"math", day:4, sp:5, ep:6, w:[[8,18]], room:"Room 2308", place:"Multimedia Classroom", odd:false },
+];
+const TOTAL_WEEKS = 18;
+let state = { week: 1, view: "week", day: 0, filters: new Set(Object.keys(CATS)) };
+
+const inWeek = (c, wk) => c.w.some(r => wk >= r[0] && wk <= r[1]);
+const anyWeek = (wk) => C.some(c => inWeek(c, wk));
+const weekLabel = (c) => c.w.map(r => r[0]===r[1] ? `Week ${r[0]}` : `Weeks ${r[0]}–${r[1]}`).join(", ");
+const periodLabel = (c) => c.sp===c.ep ? `Period ${c.sp}` : `Periods ${c.sp}–${c.ep}`;
+const timeSpan = (c) => `${PT[c.sp].s}–${PT[c.ep].e}`;
+const svgIcon = (p) => `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const PIN = svgIcon('<path d="M8 1.5c2.5 0 4.5 2 4.5 4.5 0 3-4.5 8.5-4.5 8.5S3.5 9 3.5 6C3.5 3.5 5.5 1.5 8 1.5z"/><circle cx="8" cy="6" r="1.6"/>');
+const CLOCK = svgIcon('<circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.4"/>');
+const CAL = svgIcon('<rect x="2.2" y="3" width="11.6" height="10.6" rx="2"/><path d="M2.2 6h11.6M5.5 1.6v2.4M10.5 1.6v2.4"/>');
+const TAG = svgIcon('<path d="M2 2h5l7 7-5 5-7-7z"/><circle cx="5" cy="5" r="1"/>');
+const HASH = svgIcon('<path d="M5 2 3.5 14M12.5 2 11 14M2.5 5.5h11M2 10.5h11"/>');
+
+const weekScroll = document.getElementById('weekScroll');
+for (let w=1; w<=TOTAL_WEEKS; w++){
+  const b = document.createElement('button');
+  b.className = 'week-pill' + (w===state.week?' active':'') + (anyWeek(w)?'':' empty');
+  b.innerHTML = `<span class="wk">WK</span><span class="num">${w}</span>`;
+  b.onclick = () => { state.week = w; refresh(); syncPills(); };
+  weekScroll.appendChild(b);
+}
+function syncPills(){
+  [...weekScroll.children].forEach((b,i)=> b.classList.toggle('active', i+1===state.week));
+  const el = weekScroll.children[state.week-1];
+  el && el.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
+}
+
+const legend = document.getElementById('legend');
+Object.entries(CATS).forEach(([k,v])=>{
+  const c = document.createElement('button');
+  c.className = 'chip';
+  c.innerHTML = `<span class="dot" style="background:${v.accent}"></span>${v.name}`;
+  c.onclick = () => {
+    if (state.filters.has(k) && state.filters.size===1){ Object.keys(CATS).forEach(x=>state.filters.add(x)); }
+    else if (state.filters.has(k)) { state.filters.delete(k); } else { state.filters.add(k); }
+    [...legend.children].forEach((ch,i)=> ch.classList.toggle('off', !state.filters.has(Object.keys(CATS)[i])));
+    refresh();
+  };
+  legend.appendChild(c);
+});
+
+const seg = document.getElementById('seg');
+const segThumb = document.getElementById('segThumb');
+function moveThumb(){ const btn = seg.querySelector('button.active'); segThumb.style.width = btn.offsetWidth + 'px'; segThumb.style.transform = `translateX(${btn.offsetLeft-2}px)`; }
+seg.querySelectorAll('button').forEach(btn=>{
+  btn.onclick = () => {
+    seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    state.view = btn.dataset.view; moveThumb();
+    document.getElementById('weekView').style.display = state.view==='week' ? '' : 'none';
+    document.getElementById('dayView').style.display = state.view==='day' ? 'block' : 'none';
+    refresh();
+  };
+});
+
+const dayTabs = document.getElementById('dayTabs');
+DAYS.forEach((d,i)=>{
+  const t = document.createElement('button');
+  t.className = 'day-tab' + (i===state.day?' active':'');
+  t.innerHTML = `<span class="d1">${DAYS_SHORT[i]}</span><span class="d2">Day ${i+1}</span><span class="cnt" data-day="${i}"></span>`;
+  t.onclick = ()=>{ state.day=i; [...dayTabs.children].forEach((x,j)=>x.classList.toggle('active',j===i)); renderAgenda(); };
+  dayTabs.appendChild(t);
+});
+
+function renderStats(){
+  const active = C.filter(c=> inWeek(c,state.week) && state.filters.has(c.cat));
+  const names = new Set(active.map(c=>c.n));
+  const hours = active.reduce((s,c)=> s + (c.ep-c.sp+1)*0.75, 0);
+  const perDay = [0,0,0,0,0]; active.forEach(c=> perDay[c.day]+=(c.ep-c.sp+1));
+  const maxDay = perDay.indexOf(Math.max(...perDay));
+  const busiest = Math.max(...perDay)>0 ? DAYS_SHORT[maxDay] : "—";
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="v">${names.size}</div><div class="k">Courses</div></div>
+    <div class="stat"><div class="v">${active.length}</div><div class="k">Sessions</div></div>
+    <div class="stat"><div class="v">${hours.toFixed(hours%1?1:0)}<small>h</small></div><div class="k">Contact hrs</div></div>
+    <div class="stat"><div class="v">${busiest}</div><div class="k">Busiest day</div></div>`;
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid'); grid.innerHTML = '';
+  const corner = document.createElement('div'); corner.className='col-head'; grid.appendChild(corner);
+  DAYS.forEach((d,i)=>{
+    const h = document.createElement('div'); h.className='col-head';
+    h.innerHTML = `<div class="dow">${d}</div><div class="dnum">Day ${i+1}</div>`;
+    h.style.gridColumn = (i+2); h.style.gridRow = 1; grid.appendChild(h);
+  });
+  BANDS.forEach((b,bi)=>{
+    const bg = document.createElement('div'); bg.className='band-bg '+b.cls;
+    bg.style.gridColumn = '2 / -1'; bg.style.gridRow = (bi+2); grid.appendChild(bg);
+    const tl = document.createElement('div'); tl.className='time-label';
+    tl.style.gridColumn = 1; tl.style.gridRow = (bi+2);
+    const showGrp = bi===0 || BANDS[bi-1].grp!==b.grp;
+    tl.innerHTML = `${showGrp?`<span class="grp">${b.grp}</span>`:''}${PT[b.ps].s}<small>P${b.p}</small>`;
+    grid.appendChild(tl);
+  });
+  const active = C.filter(c=> inWeek(c,state.week));
+  let delay = 0;
+  active.forEach(c=>{
+    const shown = state.filters.has(c.cat); const cat = CATS[c.cat];
+    const startBand = bandOf(c.sp), endBand = bandOf(c.ep), span = endBand-startBand+1;
+    const card = document.createElement('div');
+    card.className = 'card' + (shown?'':' dim');
+    card.style.gridColumn = (c.day+2);
+    card.style.gridRow = `${startBand+2} / span ${span}`;
+    card.style.setProperty('--accent', cat.accent); card.style.setProperty('--accent-bg', cat.bg);
+    card.style.animationDelay = (delay+=0.02)+'s';
+    card.innerHTML = `
+      ${c.odd ? `<span class="wtag">WK ${c.w[0][0]}</span>`:''}
+      <div class="cname">${c.n}</div>
+      <div class="ptag">P${c.sp}${c.ep!==c.sp?'–'+c.ep:''} · ${timeSpan(c)}</div>
+      <div class="croom">${PIN}<span>${c.room}</span></div>
+      <div class="cmeta">${CAL}<span>${weekLabel(c)}</span></div>`;
+    card.onclick = ()=> openSheet(c);
+    grid.appendChild(card);
+  });
+  if (active.length===0){ const e = document.createElement('div'); e.className='empty-day'; e.textContent='No classes scheduled this week.'; grid.appendChild(e); }
+}
+
+function renderAgenda(){
+  const list = document.getElementById('agendaList');
+  DAYS.forEach((d,i)=>{
+    const cnt = C.filter(c=>c.day===i && inWeek(c,state.week) && state.filters.has(c.cat)).length;
+    const el = dayTabs.querySelector(`[data-day="${i}"]`); if(el) el.textContent = cnt ? `${cnt} class${cnt>1?'es':''}` : '';
+  });
+  const items = C.filter(c=> c.day===state.day && inWeek(c,state.week) && state.filters.has(c.cat)).sort((a,b)=> a.sp-b.sp);
+  list.innerHTML = '';
+  if(items.length===0){ list.innerHTML = `<div class="agenda-empty"><div class="big">🌤️</div><div class="msg">No classes on ${DAYS[state.day]} in Week ${state.week}</div></div>`; return; }
+  let delay=0;
+  items.forEach(c=>{
+    const cat = CATS[c.cat];
+    const row = document.createElement('div'); row.className='arow'; row.style.animationDelay = (delay+=0.04)+'s';
+    row.innerHTML = `
+      <div class="atime"><div class="t1">${PT[c.sp].s}</div><div class="t2">${PT[c.ep].e}</div><div class="t3">P${c.sp}${c.ep!==c.sp?'–'+c.ep:''}</div></div>
+      <div class="acard" style="--accent:${cat.accent};--accent-bg:${cat.bg}">
+        <div class="an">${c.n}</div>
+        <div class="am">${PIN}<span>${c.room} · ${c.place}</span></div>
+        <span class="cat">${cat.name}${c.odd?' · Single week':''}</span>
+      </div>`;
+    row.querySelector('.acard').onclick = ()=> openSheet(c);
+    list.appendChild(row);
+  });
+}
+
+const scrim = document.getElementById('scrim'); const sheet = document.getElementById('sheet');
+function openSheet(c){
+  const cat = CATS[c.cat]; const body = document.getElementById('sheetBody');
+  body.style.setProperty('--accent', cat.accent); body.style.setProperty('--accent-bg', cat.bg);
+  body.innerHTML = `
+    <span class="badge">${cat.name}${c.odd?' · Single week':''}</span>
+    <h2>${c.n}</h2>
+    <div class="rows">
+      <div class="drow"><div class="di">${CLOCK}</div><div><div class="dk">Time</div><div class="dv">${DAYS[c.day]} · ${timeSpan(c)}</div></div></div>
+      <div class="drow"><div class="di">${HASH}</div><div><div class="dk">Periods</div><div class="dv">${periodLabel(c)}${c.note?`<br><span style="color:var(--label-2);font-weight:500;font-size:13px">${c.note}</span>`:''}</div></div></div>
+      <div class="drow"><div class="di">${CAL}</div><div><div class="dk">Teaching weeks</div><div class="dv">${weekLabel(c)}${c.odd?' · odd weeks only':''}</div></div></div>
+      <div class="drow"><div class="di">${PIN}</div><div><div class="dk">Location</div><div class="dv">${c.room}<br><span style="color:var(--label-2);font-weight:500;font-size:13px">${c.place}</span></div></div></div>
+      <div class="drow"><div class="di">${TAG}</div><div><div class="dk">Category</div><div class="dv">${cat.name}</div></div></div>
+    </div>
+    <button class="close-btn" onclick="closeSheet()">Done</button>`;
+  scrim.classList.add('show'); sheet.classList.add('show');
+}
+function closeSheet(){ scrim.classList.remove('show'); sheet.classList.remove('show'); }
+scrim.onclick = closeSheet;
+
+// Reminders: .ics generation + Clock alarm list
+(function(){
+  const pad = n => String(n).padStart(2,'0');
+  function subLead(hhmm, lead){
+    let [h,m] = hhmm.split(':').map(Number);
+    let t = h*60 + m - lead; if (t < 0) t += 1440;
+    return pad(Math.floor(t/60)) + ':' + pad(t%60);
+  }
+  function fmtDate(d){ return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()); }
+  function occDate(base, week, day){ const d = new Date(base.getTime()); d.setDate(d.getDate() + (week-1)*7 + day); return d; }
+  function buildICS(){
+    const val = document.getElementById('remDate').value;
+    const base = new Date(val + 'T00:00:00');
+    const lead = +document.getElementById('remLead').value;
+    if (!val || isNaN(base.getTime())) return null;
+    const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    let out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//JIT Fall Schedule//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    let uid = 0;
+    C.forEach(c=>{
+      c.w.forEach(range=>{
+        for (let w=range[0]; w<=range[1]; w++){
+          const d = occDate(base, w, c.day);
+          const ds = fmtDate(d);
+          const st = PT[c.sp].s.replace(':',''), et = PT[c.ep].e.replace(':','');
+          out.push('BEGIN:VEVENT');
+          out.push('UID:jit-'+(uid++)+'-'+ds+'@schedule');
+          out.push('DTSTAMP:'+stamp);
+          out.push('DTSTART:'+ds+'T'+st+'00');
+          out.push('DTEND:'+ds+'T'+et+'00');
+          out.push('SUMMARY:'+c.n);
+          out.push('LOCATION:'+(c.room+' \u00B7 '+c.place).replace(/,/g,'\\,'));
+          out.push('DESCRIPTION:Week '+w+' \u00B7 Periods '+c.sp+(c.ep!==c.sp?'-'+c.ep:'')+' ('+PT[c.sp].s+'-'+PT[c.ep].e+')');
+          out.push('BEGIN:VALARM','TRIGGER:-PT'+lead+'M','ACTION:DISPLAY','DESCRIPTION:'+c.n+' starts in '+lead+' min','END:VALARM');
+          out.push('END:VEVENT');
+        }
+      });
+    });
+    out.push('END:VCALENDAR');
+    return out.join('\r\n');
+  }
+  function download(){
+    const ics = buildICS(); const hint = document.getElementById('icsHint');
+    if (!ics){ hint.textContent = 'Please set a valid Week 1 start date first.'; return; }
+    try{
+      const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'JIT-fall-schedule.ics';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      hint.textContent = 'Downloaded ✓  Open the .ics file on your phone → tap “Add All” to import into Calendar.';
+    }catch(e){
+      hint.textContent = 'Download was blocked here — tap “Copy instead”, paste into a note, save it as schedule.ics, then open it.';
+    }
+  }
+  function copyIcs(){
+    const ics = buildICS(); const hint = document.getElementById('icsHint');
+    if (!ics){ hint.textContent = 'Please set a valid Week 1 start date first.'; return; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ics).then(
+        ()=>{ hint.textContent = 'Copied ✓  Paste into a plain-text note, save as schedule.ics, then open it to import.'; },
+        ()=>{ hint.textContent = 'Couldn’t copy automatically — try the Download button instead.'; });
+    } else { hint.textContent = 'Copy unsupported here — use the Download button instead.'; }
+  }
+  function renderAlarms(){
+    const lead = +document.getElementById('remLead').value;
+    const box = document.getElementById('remAlarms');
+    const seen = {};
+    C.forEach(c=>{ const key = c.day+'-'+c.sp; (seen[key] = seen[key] || {day:c.day, sp:c.sp, items:[]}).items.push(c); });
+    const byDay = [[],[],[],[],[]];
+    Object.values(seen).forEach(g=> byDay[g.day].push(g));
+    box.innerHTML = byDay.map((groups,di)=>{
+      if (!groups.length) return '';
+      groups.sort((a,b)=> a.sp-b.sp);
+      return '<div class="rem-aday"><div class="adname">'+DAYS[di]+'</div>' +
+        groups.map(g=>{
+          const at = subLead(PT[g.sp].s, lead);
+          const names = [...new Set(g.items.map(c=>c.n))].join(' / ');
+          const weeks = g.items.map(c=>weekLabel(c)).join(' / ');
+          return '<div class="rem-arow"><span class="atime2">'+at+'</span><span class="ainfo"><b>'+names+'</b> · starts '+PT[g.sp].s+' · '+weeks+'</span></div>';
+        }).join('') + '</div>';
+    }).join('');
+  }
+  document.getElementById('remHead').onclick = ()=> document.getElementById('rem').classList.toggle('open');
+  document.getElementById('dlIcs').onclick = download;
+  document.getElementById('copyIcs').onclick = copyIcs;
+  document.getElementById('remLead').onchange = renderAlarms;
+  renderAlarms();
+})();
+
+// Bell schedule reference
+(function(){
+  const body = document.getElementById('bellBody');
+  const groups = { Morning:[], Afternoon:[], Evening:[] };
+  Object.entries(PT).forEach(([p,v])=> groups[v.g].push({p,...v}));
+  const accents = { Morning:'var(--c-eng)', Afternoon:'var(--c-cs)', Evening:'var(--c-math)' };
+  body.innerHTML = Object.entries(groups).map(([g,rows])=>`
+    <div class="bell-grp" style="--accent2:${accents[g]}">
+      <div class="gl">${g}</div>
+      ${rows.map(r=>`<div class="bell-row"><span class="bp"><span class="bn">${r.p}</span>Period ${r.p}</span><span class="bt2">${r.s} – ${r.e}</span></div>`).join('')}
+    </div>`).join('');
+  const bell = document.getElementById('bell');
+  document.getElementById('bellHead').onclick = ()=> bell.classList.toggle('open');
+})();
+
+function refresh(){ renderStats(); if(state.view==='week') renderGrid(); else renderAgenda(); }
+window.addEventListener('load', moveThumb); setTimeout(moveThumb, 60); window.addEventListener('resize', moveThumb);
+refresh(); syncPills();
+</script>
+<script>
+// Register the service worker for offline + installability.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function (err) {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
