@@ -28,7 +28,7 @@
     --bg: #f2f2f7; --bg-elevated: #ffffff;
     --label: #1c1c1e; --label-2: rgba(60,60,67,0.62); --label-3: rgba(60,60,67,0.32);
     --fill: rgba(120,120,128,0.10); --fill-2: rgba(120,120,128,0.16);
-    --hairline: rgba(60,60,67,0.14); --sheet: #ffffff;
+    --hairline: rgba(60,60,67,0.14); --sheet: #ffffff; --tabbar-bg: rgba(255,255,255,0.86);
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
     --shadow-card: 0 1px 1.5px rgba(0,0,0,0.05);
     --blur-bg: rgba(242,242,247,0.78);
@@ -46,7 +46,7 @@
       --bg: #000; --bg-elevated: #1c1c1e;
       --label: #fff; --label-2: rgba(235,235,245,0.62); --label-3: rgba(235,235,245,0.30);
       --fill: rgba(118,118,128,0.18); --fill-2: rgba(118,118,128,0.26);
-      --hairline: rgba(84,84,88,0.5); --sheet: #1c1c1e;
+      --hairline: rgba(84,84,88,0.5); --sheet: #1c1c1e; --tabbar-bg: rgba(28,28,30,0.82);
       --shadow: 0 8px 30px rgba(0,0,0,0.5); --shadow-card: 0 1px 2px rgba(0,0,0,0.3);
       --blur-bg: rgba(20,20,22,0.78);
       --c-cs-bg: rgba(10,132,255,0.20); --c-math-bg: rgba(94,92,230,0.22); --c-lang-bg: rgba(255,55,95,0.20);
@@ -60,7 +60,7 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
     background: var(--bg); color: var(--label); -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.01em; padding-bottom: env(safe-area-inset-bottom);
+    letter-spacing: -0.01em; padding-bottom: calc(58px + env(safe-area-inset-bottom));
   }
   .wrap { max-width: 1120px; margin: 0 auto; }
 
@@ -76,23 +76,37 @@
   .sub { margin-top: 2px; font-size: 13px; color: var(--label-2); font-weight: 500; }
   .sub b { color: var(--c-cs); font-weight: 700; }
   .head-btns { display: flex; gap: 7px; align-items: center; }
-  .today-btn, .gear-btn {
+  .today-btn {
     appearance: none; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 650;
     padding: 7px 13px; border-radius: 18px; background: var(--fill); color: var(--c-cs); transition: transform 0.15s;
   }
-  .gear-btn { padding: 7px 11px; color: var(--label-2); }
-  .today-btn:active, .gear-btn:active { transform: scale(0.94); }
-  .segrow { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-  .segmented { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 2px; position: relative; }
-  .segmented button {
-    appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 13px;
-    font-weight: 600; color: var(--label); padding: 6px 16px; border-radius: 7px; position: relative; z-index: 2;
+  .today-btn:active { transform: scale(0.94); }
+  .add-fab {
+    appearance: none; border: 0; cursor: pointer; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--c-cs); color: #fff;
+    display: none; align-items: center; justify-content: center; transition: transform 0.15s;
+    box-shadow: 0 4px 12px rgba(0,122,255,0.35);
   }
-  .seg-thumb {
-    position: absolute; top: 2px; left: 2px; height: calc(100% - 4px); background: var(--bg-elevated);
-    border-radius: 7px; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    transition: transform 0.32s cubic-bezier(0.32,0.72,0,1), width 0.32s cubic-bezier(0.32,0.72,0,1);
+  .add-fab svg { width: 22px; height: 22px; }
+  .add-fab:active { transform: scale(0.9); }
+
+  /* ---------- Bottom tab bar ---------- */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: flex; background: var(--tabbar-bg);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--hairline);
+    padding-bottom: env(safe-area-inset-bottom);
   }
+  .tabbar button {
+    flex: 1; appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 6px;
+    color: var(--label-3); transition: color 0.15s;
+  }
+  .tabbar button.active { color: var(--c-cs); }
+  .tabbar button svg { width: 25px; height: 25px; stroke-width: 1.9; }
+  .tabbar .tb-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em; }
+
   .week-scroll { display: flex; gap: 7px; overflow-x: auto; padding: 10px 0 8px; scrollbar-width: none; }
   .week-scroll::-webkit-scrollbar { display: none; }
   .week-pill {
@@ -201,8 +215,10 @@
   /* ---------- Collapsible panels ---------- */
   .panel { margin: 10px 18px 0; background: var(--bg-elevated); border-radius: 16px; box-shadow: var(--shadow-card); border: 0.5px solid var(--hairline); overflow: hidden; }
   .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; }
-  .panel-head .pt { font-size: 14.5px; font-weight: 700; }
-  .panel-head .px { font-size: 13px; color: var(--label-2); transition: transform 0.3s; }
+  .panel-head .pt { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
+  .panel-head .pt svg { width: 18px; height: 18px; stroke-width: 1.9; color: var(--c-cs); flex: 0 0 auto; }
+  .panel-head .px { color: var(--label-3); transition: transform 0.3s; display: flex; }
+  .panel-head .px svg { width: 16px; height: 16px; stroke-width: 2.2; }
   .panel.open .px { transform: rotate(180deg); }
   .panel-body { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.32,0.72,0,1); }
   .panel.open .panel-body { max-height: 2400px; }
@@ -284,9 +300,10 @@
     display: flex; align-items: center; justify-content: center;
   }
   .tcal:active { opacity: 0.6; }
-  .tasks-empty { text-align: center; padding: 44px 20px 30px; }
-  .tasks-empty .big { font-size: 36px; margin-bottom: 6px; }
-  .tasks-empty .msg { font-size: 14.5px; font-weight: 600; color: var(--label-2); }
+  .tasks-empty { text-align: center; padding: 90px 20px 30px; display: flex; flex-direction: column; align-items: center; }
+  .tasks-empty .empty-icon { width: 46px; height: 46px; color: var(--label-3); margin-bottom: 18px; }
+  .tasks-empty .empty-title { font-size: 20px; font-weight: 700; color: var(--label); margin-bottom: 6px; }
+  .tasks-empty .empty-sub { font-size: 14.5px; font-weight: 500; color: var(--label-2); }
 
   /* due dots on day tabs & week pills */
   .day-tab.due-tab::before { content:""; position:absolute; top: 5px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--c-due); }
@@ -323,35 +340,17 @@
     <div class="head-inner">
       <div class="head-top">
         <div>
-          <h1>Schedule</h1>
+          <h1 id="headTitle">Schedule</h1>
           <div class="sub" id="subline">Fall 2026–2027</div>
         </div>
         <div class="head-btns">
           <button class="today-btn" id="todayBtn" style="display:none">Today</button>
-          <button class="gear-btn" id="gearBtn" title="Settings">⚙︎</button>
-        </div>
-      </div>
-      <div class="segrow">
-        <div class="segmented" id="seg">
-          <span class="seg-thumb" id="segThumb"></span>
-          <button data-view="day" class="active">Day</button>
-          <button data-view="week">Week</button>
-          <button data-view="tasks">Tasks</button>
+          <button class="add-fab" id="addFab" title="New assignment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
       </div>
       <div class="week-scroll" id="weekScroll"></div>
     </div>
   </header>
-
-  <!-- First-run setup -->
-  <div class="setup" id="setup" style="display:none">
-    <div class="st">Set your semester start date</div>
-    <div class="sd">Pick the <b>first Monday of Week 1</b>. Once saved, the app always opens on today's classes and the current week — like a real calendar. (Check 通知公告 in 移动教务 or ask a classmate for the exact date.)</div>
-    <div class="row">
-      <input type="date" id="setupDate">
-      <button class="save" id="setupSave">Save</button>
-    </div>
-  </div>
 
   <!-- Now / Next hero -->
   <div class="hero" id="hero"></div>
@@ -367,19 +366,30 @@
 
   <!-- Tasks view -->
   <div class="tasks" id="tasksView">
-    <button class="tadd" id="taskAddBtn">＋ New assignment</button>
     <div id="taskList"></div>
     <div class="pbtns" style="margin-top:16px">
-      <button class="pbtn" id="taskIcsAll">🗓 Add all to Calendar</button>
+      <button class="pbtn" id="taskIcsAll"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:6px"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Add all to Calendar</button>
       <button class="pbtn" id="taskIcsCopy">Copy .ics</button>
     </div>
-    <div class="phint" id="taskHint">Each assignment imports with three alerts — 3 days, 1 day, and 2 hours before it's due. Tap the circle to mark done; tap 🗓 on a row for just that one.</div>
+    <div class="phint" id="taskHint">Each assignment imports with three alerts — 3 days, 1 day, and 2 hours before it's due. Tap the circle to mark done; tap the calendar icon on a row to export just that one.</div>
+  </div>
+
+  <!-- Info view -->
+  <div class="infoview" id="infoView" style="display:none">
+  <!-- First-run setup -->
+  <div class="setup" id="setup" style="display:none">
+    <div class="st">Set your semester start date</div>
+    <div class="sd">Pick the <b>first Monday of Week 1</b>. Once saved, the app always opens on today's classes and the current week — like a real calendar. (Check 通知公告 in 移动教务 or ask a classmate for the exact date.)</div>
+    <div class="row">
+      <input type="date" id="setupDate">
+      <button class="save" id="setupSave">Save</button>
+    </div>
   </div>
 
   <!-- Reminders -->
   <div class="panel" id="remPanel">
     <div class="panel-head" data-toggle="remPanel">
-      <span class="pt">🔔 Reminders &amp; alarms</span><span class="px">▾</span>
+      <span class="pt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Reminders &amp; alarms</span><span class="px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
     </div>
     <div class="panel-body"><div class="panel-inner">
       <div class="pnote">Calendar alerts fire <b>before</b> class by the lead time below — set it <b>before</b> downloading. If you already imported an older file, delete those events and re-import: alerts are baked in at download time.</div>
@@ -411,9 +421,11 @@
   <!-- Bell schedule -->
   <div class="panel" id="bellPanel">
     <div class="panel-head" data-toggle="bellPanel">
-      <span class="pt">🕐 Bell schedule</span><span class="px">▾</span>
+      <span class="pt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Bell schedule</span><span class="px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
     </div>
     <div class="panel-body"><div class="panel-inner" id="bellBody"></div></div>
+  </div>
+
   </div>
 
   <div class="footnote">
@@ -424,6 +436,26 @@
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"><div class="grabber"></div><div id="sheetBody"></div></div>
+
+  <!-- Bottom tab bar -->
+  <nav class="tabbar" id="tabbar">
+    <button data-view="day" class="active" aria-label="Day">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      <span class="tb-label">Day</span>
+    </button>
+    <button data-view="week" aria-label="Week">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span class="tb-label">Week</span>
+    </button>
+    <button data-view="tasks" aria-label="Tasks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="tb-label">Tasks</span>
+    </button>
+    <button data-view="info" aria-label="Info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <span class="tb-label">Info</span>
+    </button>
+  </nav>
 
 <script>
 // ================= Data =================
@@ -522,13 +554,19 @@ let state = {
 // ================= Header / subline =================
 function renderSub(){
   const el = document.getElementById('subline');
+  if (state.view === 'tasks'){
+    const pend = tasks.filter(k=>!k.done).length, done = tasks.filter(k=>k.done).length;
+    el.textContent = `${pend} pending · ${done} completed`;
+    return;
+  }
+  if (state.view === 'info'){ el.textContent = 'JIT · Fall 2026–2027'; return; }
   const t = todayInfo();
   if (!t.known){ el.innerHTML = 'Fall 2026–2027 · set start date to sync with today'; return; }
   const dstr = t.now.toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short'});
   if (!t.inSemester){
     el.innerHTML = t.week < 1 ? `${dstr} · semester starts in <b>${Math.ceil((week1Monday()-t.now)/86400000)} days</b>` : `${dstr} · semester ended`;
   } else {
-    el.innerHTML = `${dstr} · <b>Week ${t.week}</b>${t.isWeekend ? ' · Weekend 🎉' : ''}`;
+    el.innerHTML = `${dstr} · <b>Week ${t.week}</b>${t.isWeekend ? ' · Weekend' : ''}`;
   }
 }
 
@@ -589,13 +627,7 @@ function renderSetup(){
     refresh();
   };
 }
-document.getElementById('gearBtn').onclick = () => {
-  // reopen setup to change the date
-  settings.start ? (document.getElementById('setup').style.display =
-    document.getElementById('setup').style.display === 'none' ? '' : 'none') : null;
-  if (settings.start) document.getElementById('setupDate').value = settings.start;
-  if (!settings.start) document.getElementById('setup').scrollIntoView({behavior:'smooth'});
-};
+// settings live in the Info tab now
 
 // ================= Hero (Now / Next) =================
 function renderHero(){
@@ -631,15 +663,17 @@ function renderHero(){
 }
 
 // ================= Segmented =================
-const seg = document.getElementById('seg');
-const segThumb = document.getElementById('segThumb');
-function moveThumb(){ const btn = seg.querySelector('button.active'); if(!btn) return; segThumb.style.width = btn.offsetWidth+'px'; segThumb.style.transform = `translateX(${btn.offsetLeft-2}px)`; }
-seg.querySelectorAll('button').forEach(btn=>{
+const tabbar = document.getElementById('tabbar');
+const headTitle = document.getElementById('headTitle');
+const addFab = document.getElementById('addFab');
+const VIEW_TITLES = { day: 'Schedule', week: 'Schedule', tasks: 'Assignments', info: 'Info' };
+tabbar.querySelectorAll('button').forEach(btn=>{
   btn.onclick = () => {
-    seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); state.view = btn.dataset.view; moveThumb(); refresh();
+    tabbar.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); state.view = btn.dataset.view; refresh();
   };
 });
+addFab.onclick = () => openTaskAdd();
 
 // ================= Day tabs =================
 const dayTabs = document.getElementById('dayTabs');
@@ -705,8 +739,8 @@ function renderAgenda(){
       </div>`;
     row.querySelector('.acard').onclick = ()=>{
       state.view = 'tasks';
-      seg.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view==='tasks'));
-      moveThumb(); refresh();
+      tabbar.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view==='tasks'));
+      refresh();
     };
     list.appendChild(row);
   });
@@ -835,7 +869,7 @@ document.querySelectorAll('.panel-head').forEach(h=>{
       const a = document.createElement('a'); a.href = url; a.download = 'JIT-fall-schedule.ics';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url), 1500);
-      hint.textContent = 'Downloaded ✓ Open it on your phone → Add All. Alert: ' + remLead.options[remLead.selectedIndex].text + '.';
+      hint.textContent = 'Downloaded. Open it on your phone → Add All. Alert: ' + remLead.options[remLead.selectedIndex].text + '.';
     }catch(e){ hint.textContent = 'Download blocked — use Copy, paste into a note, save as schedule.ics.'; }
   };
   document.getElementById('copyIcs').onclick = ()=>{
@@ -843,7 +877,7 @@ document.querySelectorAll('.panel-head').forEach(h=>{
     if (!ics){ hint.textContent = 'Set the Week 1 start date first.'; return; }
     if (navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(ics).then(
-        ()=> hint.textContent = 'Copied ✓ Paste into a plain-text note, save as schedule.ics, open to import.',
+        ()=> hint.textContent = 'Copied. Paste into a plain-text note, save as schedule.ics, open to import.',
         ()=> hint.textContent = 'Copy failed — try Download.');
     } else hint.textContent = 'Copy unsupported — try Download.';
   };
@@ -926,7 +960,11 @@ const isUrgentTask = k => { const diff = k.due - Date.now(); return !k.done && d
 function renderTasksList(){
   const box = document.getElementById('taskList');
   if (!tasks.length){
-    box.innerHTML = '<div class="tasks-empty"><div class="big">📚</div><div class="msg">No assignments yet — add your first one</div></div>';
+    box.innerHTML = '<div class="tasks-empty">' +
+      '<svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' +
+      '<div class="empty-title">No assignments yet</div>' +
+      '<div class="empty-sub">Tap + to add your first assignment</div>' +
+      '</div>';
     return;
   }
   const now = Date.now(), monNow = mondayOf(now);
@@ -961,7 +999,7 @@ function renderTasksList(){
           '<div class="ttitle">' + escHtml(k.title) + '</div>' +
           '<div class="tdue' + dueCls + '">' + (k.done ? 'Done' : 'Due ' + fmtDueText(k.due)) + '</div>' +
         '</div>' +
-        '<button class="tcal" title="Add to Calendar">🗓</button>';
+        '<button class="tcal" title="Add to Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></button>';
       row.onclick = () => { k.done = !k.done; saveTasks(); refresh(); };
       row.querySelector('.tcal').onclick = (e) => { e.stopPropagation(); downloadTasksICS([k]); };
       card.appendChild(row);
@@ -999,11 +1037,11 @@ function openTaskAdd(){
     if (!title || !date) return;
     tasks.push({ id: 't'+Date.now(), course: selCat.n, cat: selCat.cat, title, due: new Date(date+'T'+time).getTime(), done: false });
     saveTasks(); closeSheet(); refresh();
-    document.getElementById('taskHint').textContent = 'Added ✓ Tap 🗓 on the row to bake its three alerts into your Calendar.';
+    document.getElementById('taskHint').textContent = 'Added. Tap the calendar icon on the row to bake its three alerts into your Calendar.';
   };
   scrim.classList.add('show'); sheet.classList.add('show');
 }
-document.getElementById('taskAddBtn').onclick = openTaskAdd;
+// (assignment add is triggered by the header + FAB)
 
 // ---- tasks → .ics (3 alerts: 3 days / 1 day / 2 hours) ----
 function buildTasksICS(list){
@@ -1015,7 +1053,7 @@ function buildTasksICS(list){
     const sum = (k.course && k.course !== 'Other' ? k.course + ' — ' : '') + k.title;
     out.push('BEGIN:VEVENT','UID:task-'+k.id+'@schedule','DTSTAMP:'+stamp,
       'DTSTART:'+dt(k.due),'DTEND:'+dt(k.due + 30*60000),
-      'SUMMARY:'+esc('📌 '+sum),'DESCRIPTION:'+esc('Assignment deadline · JIT Schedule'));
+      'SUMMARY:'+esc(sum),'DESCRIPTION:'+esc('Assignment deadline · JIT Schedule'));
     [['-P3D','3 days'],['-P1D','1 day'],['-PT2H','2 hours']].forEach(a => {
       out.push('BEGIN:VALARM','TRIGGER:'+a[0],'ACTION:DISPLAY','DESCRIPTION:'+esc(sum+' due in '+a[1]),'END:VALARM');
     });
@@ -1032,7 +1070,7 @@ function downloadTasksICS(list){
     const a = document.createElement('a'); a.href = url; a.download = list.length===1 ? 'assignment.ics' : 'JIT-assignments.ics';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1500);
-    hint.textContent = 'Downloaded ✓ Open it → Add All. Alerts: 3 days, 1 day, 2 hours before.';
+    hint.textContent = 'Downloaded. Open it → Add All. Alerts: 3 days, 1 day, 2 hours before.';
   } catch(e){ hint.textContent = 'Download blocked — use Copy .ics, paste into a note, save as assignments.ics.'; }
 }
 document.getElementById('taskIcsAll').onclick = () => {
@@ -1047,28 +1085,35 @@ document.getElementById('taskIcsCopy').onclick = () => {
   if (!pending.length){ hint.textContent = 'Nothing pending to export.'; return; }
   if (navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(buildTasksICS(pending)).then(
-      ()=> hint.textContent = 'Copied ✓ Paste into a plain-text note, save as assignments.ics, open to import.',
+      ()=> hint.textContent = 'Copied. Paste into a plain-text note, save as assignments.ics, open to import.',
       ()=> hint.textContent = 'Copy failed — try Add all.');
   } else hint.textContent = 'Copy unsupported — try Add all.';
 };
 
 // ================= Refresh =================
 function refresh(){
-  renderSub(); renderPills(); renderSetup(); syncTodayBtn();
-  document.getElementById('dayView').style.display = state.view==='day' ? 'block' : 'none';
-  document.getElementById('weekView').style.display = state.view==='week' ? 'block' : 'none';
-  document.getElementById('tasksView').style.display = state.view==='tasks' ? 'block' : 'none';
-  weekScroll.style.display = state.view==='tasks' ? 'none' : '';
-  if (state.view==='day'){ renderDayTabs(); renderAgenda(); }
-  else if (state.view==='week'){ renderGrid(); }
-  else { renderTasksList(); }
-  if (state.view==='tasks'){ const h = document.getElementById('hero'); h.style.display='none'; h.innerHTML=''; }
-  else renderHero();
+  const v = state.view;
+  headTitle.textContent = VIEW_TITLES[v] || 'Schedule';
+  addFab.style.display = v === 'tasks' ? 'flex' : 'none';
+  tabbar.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+
+  renderSub(); renderSetup(); syncTodayBtn();
+  weekScroll.style.display = (v==='day' || v==='week') ? '' : 'none';
+  if (v!=='day' && v!=='week') { /* pills hidden */ } else renderPills();
+
+  document.getElementById('dayView').style.display = v==='day' ? 'block' : 'none';
+  document.getElementById('weekView').style.display = v==='week' ? 'block' : 'none';
+  document.getElementById('tasksView').style.display = v==='tasks' ? 'block' : 'none';
+  document.getElementById('infoView').style.display = v==='info' ? 'block' : 'none';
+
+  if (v==='day'){ renderDayTabs(); renderAgenda(); }
+  else if (v==='week'){ renderGrid(); }
+  else if (v==='tasks'){ renderTasksList(); }
+
+  const h = document.getElementById('hero');
+  if (v==='day'){ renderHero(); } else { h.style.display='none'; h.innerHTML=''; }
 }
 refresh();
-setTimeout(moveThumb, 60);
-window.addEventListener('resize', moveThumb);
-window.addEventListener('load', moveThumb);
 // keep "Now / Next" fresh
 setInterval(()=>{ renderHero(); if(state.view==='day') renderAgenda(); renderSub(); }, 60000);
 
@@ -1079,5 +1124,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
 </body>
 </html>

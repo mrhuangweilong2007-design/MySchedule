@@ -1,6 +1,6 @@
 /* JIT Schedule — service worker
    Offline-first. Bump CACHE when you change any file to force an update. */
-const CACHE = 'jit-schedule-v3';
+const CACHE = 'jit-schedule-v5';
 
 const ASSETS = [
   './',
