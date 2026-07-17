@@ -39,6 +39,7 @@
     --c-pe: #34c759; --c-pe-bg: rgba(52,199,89,0.13);
     --c-culture: #00b8d4; --c-culture-bg: rgba(0,184,212,0.12);
     --c-project: #bf5af2; --c-project-bg: rgba(191,90,242,0.12);
+    --c-due: #ff3b30; --c-due-bg: rgba(255,59,48,0.12);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -51,6 +52,7 @@
       --c-cs-bg: rgba(10,132,255,0.20); --c-math-bg: rgba(94,92,230,0.22); --c-lang-bg: rgba(255,55,95,0.20);
       --c-eng-bg: rgba(255,159,10,0.20); --c-pe-bg: rgba(48,209,88,0.20);
       --c-culture-bg: rgba(0,200,230,0.20); --c-project-bg: rgba(191,90,242,0.22);
+      --c-due: #ff453a; --c-due-bg: rgba(255,69,58,0.22);
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -249,6 +251,68 @@
   .drow .dv small { color: var(--label-2); font-weight: 500; font-size: 12.5px; }
   .close-btn { appearance: none; border: 0; cursor: pointer; font: inherit; width: 100%; margin-top: 15px; padding: 13px; border-radius: 13px; background: var(--fill); color: var(--c-cs); font-size: 15px; font-weight: 650; }
 
+  /* ---------- Tasks view ---------- */
+  .tasks { padding: 4px 18px 20px; display: none; }
+  .tadd {
+    appearance: none; border: 0; cursor: pointer; font: inherit; width: 100%;
+    font-size: 14.5px; font-weight: 650; padding: 13px; border-radius: 14px;
+    background: var(--c-cs); color: #fff; margin: 8px 0 4px; transition: transform 0.15s;
+  }
+  .tadd:active { transform: scale(0.98); }
+  .tgroup-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--label-3); margin: 16px 4px 6px; }
+  .tgroup-label.overdue { color: var(--c-due); }
+  .tcard { background: var(--bg-elevated); border-radius: 15px; box-shadow: var(--shadow-card); border: 0.5px solid var(--hairline); overflow: hidden; }
+  .trow { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .trow + .trow { border-top: 0.5px solid var(--hairline); }
+  .trow:active { background: var(--fill); }
+  .tcheck {
+    width: 24px; height: 24px; border-radius: 50%; border: 1.8px solid var(--label-3);
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: transparent; transition: all 0.15s;
+  }
+  .trow.done .tcheck { background: var(--c-pe); border-color: var(--c-pe); color: #fff; }
+  .tbody { flex: 1; min-width: 0; }
+  .trow.done .tbody { opacity: 0.45; }
+  .tcourse { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--accent); background: var(--accent-bg); padding: 2px 8px; border-radius: 6px; margin-bottom: 3px; }
+  .ttitle { font-size: 15px; font-weight: 650; line-height: 1.3; }
+  .trow.done .ttitle { text-decoration: line-through; }
+  .tdue { font-size: 12.5px; color: var(--label-2); font-weight: 500; margin-top: 2px; }
+  .tdue.urgent { color: var(--c-due); font-weight: 650; }
+  .tcal {
+    appearance: none; border: 0; cursor: pointer; font: inherit; width: 34px; height: 34px;
+    border-radius: 50%; background: var(--fill); flex: 0 0 auto; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tcal:active { opacity: 0.6; }
+  .tasks-empty { text-align: center; padding: 44px 20px 30px; }
+  .tasks-empty .big { font-size: 36px; margin-bottom: 6px; }
+  .tasks-empty .msg { font-size: 14.5px; font-weight: 600; color: var(--label-2); }
+
+  /* due dots on day tabs & week pills */
+  .day-tab.due-tab::before { content:""; position:absolute; top: 5px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--c-due); }
+  .day-tab.due-tab.active::before { background: var(--c-due); }
+  .week-pill.has-due::before { content:""; position:absolute; top: 4px; right: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--c-due); }
+  .week-pill.active.has-due::before { background: #fff; }
+
+  /* due row inside day agenda */
+  .arow.due .atime .t1 { color: var(--c-due); }
+  .due-badge { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; color: #fff; background: var(--c-due); padding: 3px 8px; border-radius: 6px; }
+
+  /* add-assignment sheet form */
+  .tf-label { font-size: 10.5px; font-weight: 700; color: var(--label-2); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    appearance: none; border: 0; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 650;
+    padding: 8px 13px; border-radius: 10px; background: var(--fill); color: var(--label); transition: all 0.15s;
+  }
+  .chip.sel { background: var(--label); color: var(--bg); }
+  .tf-input {
+    font: inherit; font-size: 15px; font-weight: 550; color: var(--label); background: var(--fill);
+    border: 0; border-radius: 11px; padding: 12px 14px; width: 100%; -webkit-appearance: none;
+  }
+  .tf-row2 { display: flex; gap: 8px; }
+  .tf-row2 .tf-input { flex: 1; }
+
   .footnote { text-align: center; font-size: 11.5px; color: var(--label-3); padding: 16px 20px 28px; line-height: 1.5; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: 0.01ms !important; } }
 </style>
@@ -272,6 +336,7 @@
           <span class="seg-thumb" id="segThumb"></span>
           <button data-view="day" class="active">Day</button>
           <button data-view="week">Week</button>
+          <button data-view="tasks">Tasks</button>
         </div>
       </div>
       <div class="week-scroll" id="weekScroll"></div>
@@ -299,6 +364,17 @@
 
   <!-- Week view -->
   <div class="grid-scroll" id="weekView"><div class="grid" id="grid"></div></div>
+
+  <!-- Tasks view -->
+  <div class="tasks" id="tasksView">
+    <button class="tadd" id="taskAddBtn">＋ New assignment</button>
+    <div id="taskList"></div>
+    <div class="pbtns" style="margin-top:16px">
+      <button class="pbtn" id="taskIcsAll">🗓 Add all to Calendar</button>
+      <button class="pbtn" id="taskIcsCopy">Copy .ics</button>
+    </div>
+    <div class="phint" id="taskHint">Each assignment imports with three alerts — 3 days, 1 day, and 2 hours before it's due. Tap the circle to mark done; tap 🗓 on a row for just that one.</div>
+  </div>
 
   <!-- Reminders -->
   <div class="panel" id="remPanel">
@@ -342,7 +418,7 @@
 
   <div class="footnote">
     Jinling Institute of Technology · 金陵科技学院 · 2026–2027 Term 1<br>
-    Tap any class for details · “Single week” courses meet only that week · 45-min periods · Works offline
+    Tap any class for details · Assignments live in the Tasks tab · “Single week” courses meet only that week · 45-min periods · Works offline
   </div>
 </div>
 
@@ -468,6 +544,7 @@ function renderPills(){
     if (w===state.week) cls += ' active';
     if (!anyWeek(w)) cls += ' empty';
     if (t.known && t.inSemester && w===t.week) cls += ' current';
+    if (weekHasDue(w)) cls += ' has-due';
     b.className = cls;
     let dateStr = '';
     if (base){
@@ -574,6 +651,7 @@ function renderDayTabs(){
     const tab = document.createElement('button');
     let cls = 'day-tab' + (i===state.day?' active':'');
     if (t.known && t.inSemester && state.week===t.week && !t.isWeekend && i===t.weekday) cls += ' today-tab';
+    if (tasksDueOn(state.week, i).length) cls += ' due-tab';
     tab.className = cls;
     let sub = `Day ${i+1}`;
     if (base){
@@ -591,8 +669,9 @@ function renderAgenda(){
   const list = document.getElementById('agendaList');
   const t = todayInfo();
   const items = C.filter(c=> c.day===state.day && inWeek(c,state.week)).sort((a,b)=> a.sp-b.sp);
+  const dueToday = tasksDueOn(state.week, state.day);
   list.innerHTML = '';
-  if(!items.length){
+  if(!items.length && !dueToday.length){
     list.innerHTML = `<div class="agenda-empty"><div class="big">🌤️</div><div class="msg">No classes — ${DAYS[state.day]}, Week ${state.week}</div></div>`;
     return;
   }
@@ -612,6 +691,23 @@ function renderAgenda(){
         <div class="am">${c.room} · P${c.sp}${c.ep!==c.sp?'–'+c.ep:''}${c.odd?' · single week':''}</div>
       </div>`;
     row.querySelector('.acard').onclick = ()=> openSheet(c);
+    list.appendChild(row);
+  });
+  dueToday.forEach(k=>{
+    const cv = catVars(k.cat);
+    const d = new Date(k.due);
+    const row = document.createElement('div'); row.className='arow due'; row.style.animationDelay = (delay+=0.035)+'s';
+    row.innerHTML = `
+      <div class="atime"><div class="t1">${pad(d.getHours())}:${pad(d.getMinutes())}</div><div class="t2">due</div></div>
+      <div class="acard" style="--accent:${cv.a};--accent-bg:${cv.b}">
+        <div class="an">${escHtml(k.title)}<span class="due-badge">DUE</span></div>
+        <div class="am">${k.course && k.course!=='Other' ? escHtml(k.course)+' · ' : ''}manage in Tasks</div>
+      </div>`;
+    row.querySelector('.acard').onclick = ()=>{
+      state.view = 'tasks';
+      seg.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view==='tasks'));
+      moveThumb(); refresh();
+    };
     list.appendChild(row);
   });
 }
@@ -782,13 +878,192 @@ document.querySelectorAll('.panel-head').forEach(h=>{
   ).join('');
 })();
 
+// ================= Tasks (assignments & deadlines) =================
+const TKEY = 'jit-tasks';
+function loadTasks(){ try { return JSON.parse(localStorage.getItem(TKEY)) || []; } catch(e){ return []; } }
+function saveTasks(){ try { localStorage.setItem(TKEY, JSON.stringify(tasks)); } catch(e){} }
+let tasks = loadTasks();
+
+const escHtml = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const COURSE_OPTS = (() => {
+  const seen = {}; const out = [];
+  C.forEach(c => { if (!seen[c.n]){ seen[c.n] = 1; out.push({ n: c.n, cat: c.cat }); } });
+  out.push({ n: 'Other', cat: null });
+  return out;
+})();
+const catVars = cat => cat && CATS[cat]
+  ? { a: CATS[cat].accent, b: CATS[cat].bg }
+  : { a: 'var(--c-due)', b: 'var(--c-due-bg)' };
+
+// semester mapping (only for dots + agenda; grouping works without a start date)
+function dateOfCell(week, dayIdx){
+  const base = week1Monday(); if (!base) return null;
+  const d = new Date(base.getTime()); d.setDate(d.getDate() + (week-1)*7 + dayIdx); return d;
+}
+const dayStart = ms => { const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
+const mondayOf = ms => { const s = new Date(dayStart(ms)); s.setDate(s.getDate() - ((s.getDay()+6)%7)); return s.getTime(); };
+function tasksDueOn(week, dayIdx){
+  const d = dateOfCell(week, dayIdx); if (!d) return [];
+  const t0 = dayStart(d.getTime());
+  return tasks.filter(k => !k.done && dayStart(k.due) === t0).sort((a,b)=>a.due-b.due);
+}
+function weekHasDue(w){
+  const base = week1Monday(); if (!base) return false;
+  const m0 = mondayOf(base.getTime() + (w-1)*7*86400000);
+  return tasks.some(k => !k.done && mondayOf(k.due) === m0);
+}
+function fmtDueText(ms){
+  const d = new Date(ms);
+  const dd = Math.round((dayStart(ms) - dayStart(Date.now())) / 86400000);
+  const hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  if (dd === 0) return 'Today · ' + hm;
+  if (dd === 1) return 'Tomorrow · ' + hm;
+  if (dd === -1) return 'Yesterday · ' + hm;
+  return d.toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short'}) + ' · ' + hm;
+}
+const isUrgentTask = k => { const diff = k.due - Date.now(); return !k.done && diff > 0 && diff <= 48*3600000; };
+
+function renderTasksList(){
+  const box = document.getElementById('taskList');
+  if (!tasks.length){
+    box.innerHTML = '<div class="tasks-empty"><div class="big">📚</div><div class="msg">No assignments yet — add your first one</div></div>';
+    return;
+  }
+  const now = Date.now(), monNow = mondayOf(now);
+  const groups = { overdue: [], thisWeek: [], nextWeek: [], later: [], completed: [] };
+  tasks.forEach(k => {
+    if (k.done) return groups.completed.push(k);
+    if (k.due < now) return groups.overdue.push(k);
+    const m = mondayOf(k.due);
+    if (m === monNow) groups.thisWeek.push(k);
+    else if (m === monNow + 7*86400000) groups.nextWeek.push(k);
+    else groups.later.push(k);
+  });
+  const order = [['overdue','Overdue'],['thisWeek','This week'],['nextWeek','Next week'],['later','Later'],['completed','Completed']];
+  box.innerHTML = '';
+  order.forEach(([key, label]) => {
+    const list = groups[key]; if (!list.length) return;
+    list.sort((a,b)=>a.due-b.due);
+    const lab = document.createElement('div');
+    lab.className = 'tgroup-label' + (key==='overdue' ? ' overdue' : '');
+    lab.textContent = label;
+    const card = document.createElement('div'); card.className = 'tcard';
+    list.forEach(k => {
+      const cv = catVars(k.cat);
+      const row = document.createElement('div');
+      row.className = 'trow' + (k.done ? ' done' : '');
+      row.style.setProperty('--accent', cv.a); row.style.setProperty('--accent-bg', cv.b);
+      const dueCls = (key==='overdue' || isUrgentTask(k)) ? ' urgent' : '';
+      row.innerHTML =
+        '<div class="tcheck">✓</div>' +
+        '<div class="tbody">' +
+          (k.course && k.course !== 'Other' ? '<span class="tcourse">' + escHtml(k.course) + '</span>' : '') +
+          '<div class="ttitle">' + escHtml(k.title) + '</div>' +
+          '<div class="tdue' + dueCls + '">' + (k.done ? 'Done' : 'Due ' + fmtDueText(k.due)) + '</div>' +
+        '</div>' +
+        '<button class="tcal" title="Add to Calendar">🗓</button>';
+      row.onclick = () => { k.done = !k.done; saveTasks(); refresh(); };
+      row.querySelector('.tcal').onclick = (e) => { e.stopPropagation(); downloadTasksICS([k]); };
+      card.appendChild(row);
+    });
+    box.appendChild(lab); box.appendChild(card);
+  });
+}
+
+// ---- add sheet ----
+function openTaskAdd(){
+  const body = document.getElementById('sheetBody');
+  let selCat = COURSE_OPTS[0];
+  body.innerHTML =
+    '<span class="badge" style="--accent:var(--c-cs);--accent-bg:var(--c-cs-bg)">New assignment</span>' +
+    '<div class="tf-label">Course</div><div class="chiprow" id="tfChips"></div>' +
+    '<div class="tf-label">What\'s due?</div><input class="tf-input" id="tfTitle" type="text" placeholder="e.g. Lab report Ch. 4" maxlength="80">' +
+    '<div class="tf-label">Deadline</div><div class="tf-row2">' +
+      '<input class="tf-input" id="tfDate" type="date">' +
+      '<input class="tf-input" id="tfTime" type="time" value="23:59" style="flex:0 0 118px">' +
+    '</div>' +
+    '<button class="close-btn" style="background:var(--c-cs);color:#fff" id="tfSave">Add assignment</button>' +
+    '<button class="close-btn" style="margin-top:8px" onclick="closeSheet()">Cancel</button>';
+  const chips = document.getElementById('tfChips');
+  COURSE_OPTS.forEach((opt, i) => {
+    const ch = document.createElement('button');
+    ch.className = 'chip' + (i===0 ? ' sel' : '');
+    ch.textContent = opt.n;
+    ch.onclick = () => { selCat = opt; chips.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel')); ch.classList.add('sel'); };
+    chips.appendChild(ch);
+  });
+  document.getElementById('tfSave').onclick = () => {
+    const title = document.getElementById('tfTitle').value.trim();
+    const date = document.getElementById('tfDate').value;
+    const time = document.getElementById('tfTime').value || '23:59';
+    if (!title || !date) return;
+    tasks.push({ id: 't'+Date.now(), course: selCat.n, cat: selCat.cat, title, due: new Date(date+'T'+time).getTime(), done: false });
+    saveTasks(); closeSheet(); refresh();
+    document.getElementById('taskHint').textContent = 'Added ✓ Tap 🗓 on the row to bake its three alerts into your Calendar.';
+  };
+  scrim.classList.add('show'); sheet.classList.add('show');
+}
+document.getElementById('taskAddBtn').onclick = openTaskAdd;
+
+// ---- tasks → .ics (3 alerts: 3 days / 1 day / 2 hours) ----
+function buildTasksICS(list){
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+  const esc = s => String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const dt = ms => { const d = new Date(ms); return '' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00'; };
+  let out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//JIT Schedule Tasks//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  list.forEach(k => {
+    const sum = (k.course && k.course !== 'Other' ? k.course + ' — ' : '') + k.title;
+    out.push('BEGIN:VEVENT','UID:task-'+k.id+'@schedule','DTSTAMP:'+stamp,
+      'DTSTART:'+dt(k.due),'DTEND:'+dt(k.due + 30*60000),
+      'SUMMARY:'+esc('📌 '+sum),'DESCRIPTION:'+esc('Assignment deadline · JIT Schedule'));
+    [['-P3D','3 days'],['-P1D','1 day'],['-PT2H','2 hours']].forEach(a => {
+      out.push('BEGIN:VALARM','TRIGGER:'+a[0],'ACTION:DISPLAY','DESCRIPTION:'+esc(sum+' due in '+a[1]),'END:VALARM');
+    });
+    out.push('END:VEVENT');
+  });
+  out.push('END:VCALENDAR');
+  return out.join('\r\n');
+}
+function downloadTasksICS(list){
+  const hint = document.getElementById('taskHint');
+  try {
+    const blob = new Blob([buildTasksICS(list)], {type:'text/calendar;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = list.length===1 ? 'assignment.ics' : 'JIT-assignments.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    hint.textContent = 'Downloaded ✓ Open it → Add All. Alerts: 3 days, 1 day, 2 hours before.';
+  } catch(e){ hint.textContent = 'Download blocked — use Copy .ics, paste into a note, save as assignments.ics.'; }
+}
+document.getElementById('taskIcsAll').onclick = () => {
+  const pending = tasks.filter(k => !k.done);
+  const hint = document.getElementById('taskHint');
+  if (!pending.length){ hint.textContent = 'Nothing pending to export.'; return; }
+  downloadTasksICS(pending);
+};
+document.getElementById('taskIcsCopy').onclick = () => {
+  const pending = tasks.filter(k => !k.done);
+  const hint = document.getElementById('taskHint');
+  if (!pending.length){ hint.textContent = 'Nothing pending to export.'; return; }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(buildTasksICS(pending)).then(
+      ()=> hint.textContent = 'Copied ✓ Paste into a plain-text note, save as assignments.ics, open to import.',
+      ()=> hint.textContent = 'Copy failed — try Add all.');
+  } else hint.textContent = 'Copy unsupported — try Add all.';
+};
+
 // ================= Refresh =================
 function refresh(){
   renderSub(); renderPills(); renderSetup(); syncTodayBtn();
   document.getElementById('dayView').style.display = state.view==='day' ? 'block' : 'none';
   document.getElementById('weekView').style.display = state.view==='week' ? 'block' : 'none';
-  if (state.view==='day'){ renderDayTabs(); renderAgenda(); } else { renderGrid(); }
-  renderHero();
+  document.getElementById('tasksView').style.display = state.view==='tasks' ? 'block' : 'none';
+  weekScroll.style.display = state.view==='tasks' ? 'none' : '';
+  if (state.view==='day'){ renderDayTabs(); renderAgenda(); }
+  else if (state.view==='week'){ renderGrid(); }
+  else { renderTasksList(); }
+  if (state.view==='tasks'){ const h = document.getElementById('hero'); h.style.display='none'; h.innerHTML=''; }
+  else renderHero();
 }
 refresh();
 setTimeout(moveThumb, 60);
